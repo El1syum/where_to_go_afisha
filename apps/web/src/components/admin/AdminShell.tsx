@@ -1,0 +1,12 @@
+import { AdminSidebar } from "./AdminSidebar";
+
+export function AdminShell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex min-h-screen w-full">
+      <AdminSidebar />
+      <main className="flex-1 p-6 lg:p-8">
+        {children}
+      </main>
+    </div>
+  );
+}

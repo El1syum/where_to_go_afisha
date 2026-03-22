@@ -1,0 +1,23 @@
+{
+  "name": "afisha",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=apps/web",
+    "build": "npm run build --workspace=apps/web",
+    "start": "npm run start --workspace=apps/web",
+    "worker": "npm run start --workspace=apps/worker",
+    "worker:dev": "npm run dev --workspace=apps/worker",
+    "db:generate": "npm run generate --workspace=packages/db",
+    "db:migrate": "npm run migrate --workspace=packages/db",
+    "db:seed": "npm run seed --workspace=packages/db",
+    "db:studio": "npx prisma studio --schema=packages/db/prisma/schema.prisma"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
