@@ -4,33 +4,52 @@ on:
   push:
     branches: [main]
 
+env:
+  REGISTRY: ghcr.io
+  IMAGE_WEB: ghcr.io/${{ github.repository }}/web
+  IMAGE_WORKER: ghcr.io/${{ github.repository }}/worker
+
 jobs:
-  build:
+  build-and-push:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - uses: docker/login-action@v3
         with:
-          node-version: 20
-          cache: npm
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - run: npm ci
+      - uses: docker/setup-buildx-action@v3
 
-      - run: npx prisma generate --schema=packages/db/prisma/schema.prisma
+      - name: Build & push web image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/web/Dockerfile
+          push: true
+          tags: ${{ env.IMAGE_WEB }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-      - run: npm run build --workspace=apps/web
-        env:
-          DATABASE_URL: postgresql://stub:stub@localhost:5432/stub
-          NEXT_PUBLIC_SITE_URL: ${{ vars.SITE_URL }}
+      - name: Build & push worker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/worker/Dockerfile
+          push: true
+          tags: ${{ env.IMAGE_WORKER }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   deploy:
-    needs: build
+    needs: build-and-push
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
     steps:
-      - uses: actions/checkout@v4
-
       - name: Deploy to VPS
         uses: appleboy/ssh-action@v1
         with:
@@ -38,9 +57,13 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            cd ${{ vars.DEPLOY_PATH || '/opt/afisha' }}
+            cd /opt/afisha
             git pull origin main
-            docker compose -f docker-compose.prod.yml build
-            docker compose -f docker-compose.prod.yml up -d
-            docker compose -f docker-compose.prod.yml exec web npx prisma migrate deploy --schema=packages/db/prisma/schema.prisma
+
+            # Pull pre-built images (public packages, no login needed)
+            docker pull ghcr.io/el1syum/where_to_go_afisha/web:latest
+            docker pull ghcr.io/el1syum/where_to_go_afisha/worker:latest
+
+            # Restart with new images
+            docker compose -f docker-compose.prod.yml up -d --no-build
             echo "Deploy complete!"
