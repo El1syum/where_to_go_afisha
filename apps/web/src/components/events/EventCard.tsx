@@ -24,7 +24,7 @@ export function EventCard({ event, citySlug }: EventCardProps) {
       href={`/${citySlug}/${event.category.slug}/${event.slug}`}
       className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-shadow hover:shadow-lg"
     >
-      <div className="relative aspect-[4/3] overflow-hidden bg-secondary">
+      <div className="relative z-0 aspect-[4/3] overflow-hidden bg-secondary">
         {event.imageUrl ? (
           <Image
             src={event.imageUrl}
