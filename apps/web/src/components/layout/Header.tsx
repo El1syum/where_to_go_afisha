@@ -20,8 +20,9 @@ export function Header({ cities, currentCityName }: HeaderProps) {
     <>
       <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
-          <Link href={citySlug ? `/${citySlug}` : "/"} className="text-xl font-bold text-primary">
-            Куда сходить?
+          <Link href={citySlug ? `/${citySlug}` : "/"} className="text-xl font-bold">
+            {currentCityName && <span className="text-foreground">{currentCityName} | </span>}
+            <span className="text-primary">Куда сходить?</span>
           </Link>
 
           <div className="flex items-center gap-4">
