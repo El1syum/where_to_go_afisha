@@ -6,8 +6,8 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_WEB: ghcr.io/${{ github.repository }}/web
-  IMAGE_WORKER: ghcr.io/${{ github.repository }}/worker
+  IMAGE_WEB: ghcr.io/el1syum/where_to_go_afisha/web
+  IMAGE_WORKER: ghcr.io/el1syum/where_to_go_afisha/worker
 
 jobs:
   build-and-push:
