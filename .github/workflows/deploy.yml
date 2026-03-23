@@ -75,4 +75,7 @@ jobs:
 
             # Restart with new images
             docker compose -f docker-compose.prod.yml up -d --force-recreate --no-build
+
+            # Clean up old images to save disk space
+            docker image prune -af
             echo "Deploy complete!"
