@@ -50,8 +50,16 @@ export async function GET(request: NextRequest) {
     prisma.event.count({ where }),
   ]);
 
+  // Convert BigInt fields to string for JSON serialization
+  const safeEvents = events.map((e) => ({
+    ...e,
+    modifiedTime: e.modifiedTime?.toString() ?? null,
+    price: e.price ? Number(e.price) : null,
+    priceMax: e.priceMax ? Number(e.priceMax) : null,
+  }));
+
   return NextResponse.json({
-    events,
+    events: safeEvents,
     pagination: {
       page,
       limit,
