@@ -59,20 +59,25 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
 
   const dateRange = buildDateFilter(dateFilter, exactDate);
 
-  const events = await prisma.event.findMany({
-    where: {
-      cityId: city.id,
-      categoryId: category.id,
-      isActive: true,
-      isApproved: true,
-      date: dateRange || { gte: new Date() },
-    },
-    include: {
-      category: { select: { slug: true, name: true, icon: true } },
-    },
-    orderBy: { date: "asc" },
-    take: 48,
-  });
+  const where = {
+    cityId: city.id,
+    categoryId: category.id,
+    isActive: true,
+    isApproved: true,
+    date: dateRange || { gte: new Date() },
+  };
+
+  const [events, total] = await Promise.all([
+    prisma.event.findMany({
+      where,
+      include: {
+        category: { select: { slug: true, name: true, icon: true } },
+      },
+      orderBy: { date: "asc" },
+      take: 24,
+    }),
+    prisma.event.count({ where }),
+  ]);
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
   const cityIn = city.namePrepositional || city.name;
@@ -95,7 +100,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
         <DateFilter />
       </Suspense>
 
-      <EventGrid events={events} citySlug={citySlug} />
+      <EventGrid events={events} citySlug={citySlug} categorySlug={categorySlug} total={total} dateFilter={dateFilter} exactDate={exactDate} />
     </>
   );
 }

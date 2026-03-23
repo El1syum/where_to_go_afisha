@@ -1,4 +1,5 @@
 import { EventCard } from "./EventCard";
+import { LoadMore } from "./LoadMore";
 
 interface EventGridProps {
   events: Array<{
@@ -14,9 +15,13 @@ interface EventGridProps {
     category: { slug: string; name: string; icon: string | null };
   }>;
   citySlug: string;
+  categorySlug?: string;
+  total?: number;
+  dateFilter?: string;
+  exactDate?: string;
 }
 
-export function EventGrid({ events, citySlug }: EventGridProps) {
+export function EventGrid({ events, citySlug, categorySlug, total, dateFilter, exactDate }: EventGridProps) {
   if (events.length === 0) {
     return (
       <div className="py-16 text-center">
@@ -25,11 +30,21 @@ export function EventGrid({ events, citySlug }: EventGridProps) {
     );
   }
 
+  const totalCount = total ?? events.length;
+
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {events.map((event) => (
         <EventCard key={event.slug} event={event} citySlug={citySlug} />
       ))}
+      <LoadMore
+        citySlug={citySlug}
+        categorySlug={categorySlug}
+        initialTotal={totalCount}
+        initialLoaded={events.length}
+        dateFilter={dateFilter}
+        exactDate={exactDate}
+      />
     </div>
   );
 }
