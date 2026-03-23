@@ -1,12 +1,16 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
+import { buildDateFilter } from "@/lib/utils";
 import { EventGrid } from "@/components/events/EventGrid";
+import { DateFilter } from "@/components/filters/DateFilter";
 import { JsonLd, breadcrumbJsonLd } from "@/components/seo/JsonLd";
 export const revalidate = 3600;
 
 interface CategoryPageProps {
   params: Promise<{ city: string; category: string }>;
+  searchParams: Promise<{ date?: string; exact?: string }>;
 }
 
 export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
@@ -36,8 +40,9 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
   };
 }
 
-export default async function CategoryPage({ params }: CategoryPageProps) {
+export default async function CategoryPage({ params, searchParams }: CategoryPageProps) {
   const { city: citySlug, category: categorySlug } = await params;
+  const { date: dateFilter, exact: exactDate } = await searchParams;
 
   const [city, category] = await Promise.all([
     prisma.city.findUnique({
@@ -52,13 +57,15 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
 
   if (!city || !category) notFound();
 
+  const dateRange = buildDateFilter(dateFilter, exactDate);
+
   const events = await prisma.event.findMany({
     where: {
       cityId: city.id,
       categoryId: category.id,
       isActive: true,
       isApproved: true,
-      date: { gte: new Date() },
+      date: dateRange || { gte: new Date() },
     },
     include: {
       category: { select: { slug: true, name: true, icon: true } },
@@ -83,6 +90,10 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       <h1 className="mb-6 text-2xl font-bold md:text-3xl">
         {category.name} в {cityIn}
       </h1>
+
+      <Suspense fallback={<div className="mb-6 h-10" />}>
+        <DateFilter />
+      </Suspense>
 
       <EventGrid events={events} citySlug={citySlug} />
     </>

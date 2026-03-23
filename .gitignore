@@ -33,3 +33,4 @@ example.xml
 screenshot-*.png
 *.playwright-mcp/
 tz.txt
+apps/web/tsconfig.tsbuildinfo

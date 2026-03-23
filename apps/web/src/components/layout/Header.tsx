@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { CitySelector } from "./CitySelector";
 import { CityConfirmation } from "./CityConfirmation";
@@ -13,19 +13,83 @@ interface HeaderProps {
 
 export function Header({ cities, currentCityName }: HeaderProps) {
   const params = useParams();
+  const router = useRouter();
   const citySlug = params?.city as string | undefined;
   const [showCitySelector, setShowCitySelector] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = searchQuery.trim();
+    if (q && citySlug) {
+      router.push(`/${citySlug}/search?q=${encodeURIComponent(q)}`);
+      setSearchQuery("");
+      setShowMobileSearch(false);
+    }
+  };
 
   return (
     <>
       <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
-          <Link href={citySlug ? `/${citySlug}` : "/"} className="text-xl font-bold">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4">
+          <Link href={citySlug ? `/${citySlug}` : "/"} className="shrink-0 text-xl font-bold">
             {currentCityName && <span className="text-foreground">{currentCityName} | </span>}
             <span className="text-primary">Куда сходить?</span>
           </Link>
 
-          <div className="flex items-center gap-4">
+          {/* Desktop search */}
+          {citySlug && (
+            <form onSubmit={handleSearch} className="hidden flex-1 md:flex md:max-w-md">
+              <div className="relative w-full">
+                <svg
+                  className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Поиск мероприятий..."
+                  className="w-full rounded-lg border border-border bg-secondary py-2 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+            </form>
+          )}
+
+          <div className="flex items-center gap-2">
+            {/* Mobile search toggle */}
+            {citySlug && (
+              <button
+                onClick={() => setShowMobileSearch(!showMobileSearch)}
+                className="rounded-lg p-2 transition-colors hover:bg-secondary md:hidden"
+                aria-label="Поиск"
+              >
+                <svg
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+              </button>
+            )}
+
             {currentCityName && (
               <div className="relative">
                 <button
@@ -48,6 +112,37 @@ export function Header({ cities, currentCityName }: HeaderProps) {
             )}
           </div>
         </div>
+
+        {/* Mobile search bar */}
+        {showMobileSearch && citySlug && (
+          <div className="border-t border-border px-4 py-3 md:hidden">
+            <form onSubmit={handleSearch}>
+              <div className="relative">
+                <svg
+                  className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Поиск мероприятий..."
+                  autoFocus
+                  className="w-full rounded-lg border border-border bg-secondary py-2 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+            </form>
+          </div>
+        )}
       </header>
 
       {showCitySelector && (

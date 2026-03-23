@@ -1,13 +1,17 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
+import { buildDateFilter } from "@/lib/utils";
 import { EventGrid } from "@/components/events/EventGrid";
+import { DateFilter } from "@/components/filters/DateFilter";
 import { JsonLd, breadcrumbJsonLd } from "@/components/seo/JsonLd";
 import { CitySocials } from "@/components/layout/CitySocials";
 export const revalidate = 3600;
 
 interface CityPageProps {
   params: Promise<{ city: string }>;
+  searchParams: Promise<{ date?: string; exact?: string }>;
 }
 
 export async function generateMetadata({ params }: CityPageProps): Promise<Metadata> {
@@ -32,8 +36,9 @@ export async function generateMetadata({ params }: CityPageProps): Promise<Metad
   };
 }
 
-export default async function CityPage({ params }: CityPageProps) {
+export default async function CityPage({ params, searchParams }: CityPageProps) {
   const { city: citySlug } = await params;
+  const { date: dateFilter, exact: exactDate } = await searchParams;
 
   const city = await prisma.city.findUnique({
     where: { slug: citySlug },
@@ -42,12 +47,14 @@ export default async function CityPage({ params }: CityPageProps) {
 
   if (!city) notFound();
 
+  const dateRange = buildDateFilter(dateFilter, exactDate);
+
   const events = await prisma.event.findMany({
     where: {
       cityId: city.id,
       isActive: true,
       isApproved: true,
-      date: { gte: new Date() },
+      date: dateRange || { gte: new Date() },
     },
     include: {
       category: { select: { slug: true, name: true, icon: true } },
@@ -71,6 +78,10 @@ export default async function CityPage({ params }: CityPageProps) {
       <h1 className="mb-6 text-2xl font-bold md:text-3xl">
         Куда сходить в {cityIn}
       </h1>
+
+      <Suspense fallback={<div className="mb-6 h-10" />}>
+        <DateFilter />
+      </Suspense>
 
       <EventGrid events={events} citySlug={citySlug} />
 

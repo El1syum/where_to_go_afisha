@@ -47,6 +47,106 @@ export function transliterate(str: string): string {
     .join("");
 }
 
+/**
+ * Builds a Prisma `date` filter based on the date filter key or exact date.
+ *
+ * IMPORTANT: DB dates are shifted -1 day from real dates.
+ * formatDate/formatDateTime add +1 day when displaying.
+ * So "today" in real life corresponds to (today - 1 day) in the DB.
+ *
+ * @param dateFilter - one of: today, tomorrow, weekend, week, month
+ * @param exactDate  - a specific date string in YYYY-MM-DD format (real-world date)
+ * @returns Prisma where clause for the `date` field
+ */
+export function buildDateFilter(
+  dateFilter?: string | null,
+  exactDate?: string | null,
+): { gte?: Date; lte?: Date; lt?: Date } | undefined {
+  const now = new Date();
+
+  // Helper: real date -> DB date (subtract 1 day)
+  function toDbDate(d: Date): Date {
+    const r = new Date(d);
+    r.setDate(r.getDate() - 1);
+    return r;
+  }
+
+  // Start of a day (00:00:00)
+  function startOfDay(d: Date): Date {
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  }
+
+  // End of a day (23:59:59.999)
+  function endOfDay(d: Date): Date {
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
+  }
+
+  if (exactDate) {
+    // User picked a specific real-world date
+    const realDate = new Date(exactDate + "T00:00:00");
+    const dbDate = toDbDate(realDate);
+    return {
+      gte: startOfDay(dbDate),
+      lte: endOfDay(dbDate),
+    };
+  }
+
+  if (!dateFilter) return undefined;
+
+  const realToday = startOfDay(now);
+
+  switch (dateFilter) {
+    case "today": {
+      const dbDay = toDbDate(new Date(realToday));
+      return { gte: startOfDay(dbDay), lte: endOfDay(dbDay) };
+    }
+    case "tomorrow": {
+      const realTomorrow = new Date(realToday);
+      realTomorrow.setDate(realTomorrow.getDate() + 1);
+      const dbDay = toDbDate(realTomorrow);
+      return { gte: startOfDay(dbDay), lte: endOfDay(dbDay) };
+    }
+    case "weekend": {
+      // Find next Saturday and Sunday (or current if today is Sat/Sun)
+      const day = realToday.getDay(); // 0=Sun..6=Sat
+      let satOffset: number;
+      if (day === 6) satOffset = 0;       // today is Saturday
+      else if (day === 0) satOffset = -1;  // today is Sunday, Saturday was yesterday
+      else satOffset = 6 - day;
+
+      const realSaturday = new Date(realToday);
+      realSaturday.setDate(realSaturday.getDate() + satOffset);
+      const realSunday = new Date(realSaturday);
+      realSunday.setDate(realSunday.getDate() + 1);
+
+      const dbSat = toDbDate(realSaturday);
+      const dbSun = toDbDate(realSunday);
+      return {
+        gte: startOfDay(dbSat),
+        lte: endOfDay(dbSun),
+      };
+    }
+    case "week": {
+      const realEnd = new Date(realToday);
+      realEnd.setDate(realEnd.getDate() + 6);
+      return {
+        gte: startOfDay(toDbDate(new Date(realToday))),
+        lte: endOfDay(toDbDate(realEnd)),
+      };
+    }
+    case "month": {
+      const realEnd = new Date(realToday);
+      realEnd.setDate(realEnd.getDate() + 30);
+      return {
+        gte: startOfDay(toDbDate(new Date(realToday))),
+        lte: endOfDay(toDbDate(realEnd)),
+      };
+    }
+    default:
+      return undefined;
+  }
+}
+
 export function slugify(str: string): string {
   return transliterate(str)
     .replace(/[^a-z0-9]+/g, "-")
