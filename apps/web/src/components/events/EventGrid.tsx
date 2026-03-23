@@ -17,11 +17,9 @@ interface EventGridProps {
   citySlug: string;
   categorySlug?: string;
   total?: number;
-  dateFilter?: string;
-  exactDate?: string;
 }
 
-export function EventGrid({ events, citySlug, categorySlug, total, dateFilter, exactDate }: EventGridProps) {
+export function EventGrid({ events, citySlug, categorySlug, total }: EventGridProps) {
   if (events.length === 0) {
     return (
       <div className="py-16 text-center">
@@ -42,8 +40,6 @@ export function EventGrid({ events, citySlug, categorySlug, total, dateFilter, e
         categorySlug={categorySlug}
         initialTotal={totalCount}
         initialLoaded={events.length}
-        dateFilter={dateFilter}
-        exactDate={exactDate}
       />
     </div>
   );

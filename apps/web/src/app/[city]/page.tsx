@@ -88,7 +88,7 @@ export default async function CityPage({ params, searchParams }: CityPageProps) 
         <DateFilter />
       </Suspense>
 
-      <EventGrid events={events} citySlug={citySlug} total={total} dateFilter={dateFilter} exactDate={exactDate} />
+      <EventGrid events={events} citySlug={citySlug} total={total} />
 
       <CitySocials cityId={city.id} />
     </>

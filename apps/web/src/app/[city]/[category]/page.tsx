@@ -100,7 +100,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
         <DateFilter />
       </Suspense>
 
-      <EventGrid events={events} citySlug={citySlug} categorySlug={categorySlug} total={total} dateFilter={dateFilter} exactDate={exactDate} />
+      <EventGrid events={events} citySlug={citySlug} categorySlug={categorySlug} total={total} />
     </>
   );
 }
