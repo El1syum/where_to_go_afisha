@@ -3,6 +3,7 @@ export type {
   City,
   Category,
   Event,
+  Channel,
   TelegramPost,
   ImportLog,
   Setting,
@@ -13,4 +14,5 @@ export {
   TelegramPostStatus,
   ImportStatus,
   UserRole,
+  Platform,
 } from "@prisma/client";

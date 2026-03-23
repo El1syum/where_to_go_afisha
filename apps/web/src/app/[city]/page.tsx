@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { EventGrid } from "@/components/events/EventGrid";
 import { JsonLd, breadcrumbJsonLd } from "@/components/seo/JsonLd";
+import { CitySocials } from "@/components/layout/CitySocials";
 export const revalidate = 3600;
 
 interface CityPageProps {
@@ -72,6 +73,8 @@ export default async function CityPage({ params }: CityPageProps) {
       </h1>
 
       <EventGrid events={events} citySlug={citySlug} />
+
+      <CitySocials cityId={city.id} />
     </>
   );
 }

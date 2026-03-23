@@ -27,6 +27,7 @@ model City {
 
   events                Event[]
   telegramPosts         TelegramPost[]
+  channels              Channel[]
 
   @@index([isActive, sortOrder])
 }
@@ -101,14 +102,56 @@ enum EventSource {
 }
 
 // =====================
-// TELEGRAM ПОСТЫ
+// КАНАЛЫ ПУБЛИКАЦИИ
+// =====================
+model Channel {
+  id              Int           @id @default(autoincrement())
+  cityId          Int
+  platform        Platform      @default(TELEGRAM)
+  name            String                          // "Афиша Москва", "Концерты МСК"
+  description     String?                         // Описание канала
+  channelId       String                          // @username или -100... или vk group id
+  channelUrl      String?                         // Ссылка на канал
+  isActive        Boolean       @default(true)
+  // Фильтры
+  categories      String?       @db.Text          // JSON массив slug категорий, null = все
+  minAge          Int?                            // Мин. возраст (0+, 6+, 12+, 16+, 18+)
+  maxAge          Int?
+  kidsOnly        Boolean       @default(false)
+  // Расписание
+  publishHourFrom Int           @default(9)       // Начало публикации (час)
+  publishHourTo   Int           @default(22)      // Конец публикации (час)
+  maxPostsPerDay  Int           @default(10)
+  // AI перефразирование
+  aiRephrase      Boolean       @default(false)
+  aiModel         String?                         // Модель OpenRouter
+  aiPrompt        String?       @db.Text          // Промпт для перефразирования
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  city            City          @relation(fields: [cityId], references: [id])
+  posts           TelegramPost[]
+
+  @@index([cityId, isActive])
+  @@index([platform, isActive])
+}
+
+enum Platform {
+  TELEGRAM
+  VK
+  MAX
+}
+
+// =====================
+// ПУБЛИКАЦИИ В КАНАЛЫ
 // =====================
 model TelegramPost {
   id            Int                @id @default(autoincrement())
   eventId       Int
   cityId        Int
+  channelDbId   Int?                               // FK на Channel
   messageId     Int?
-  channelId     String?
+  channelId     String?                            // legacy: platform channel id
   status        TelegramPostStatus @default(PENDING)
   errorMessage  String?
   sentAt        DateTime?
@@ -116,10 +159,12 @@ model TelegramPost {
 
   event         Event              @relation(fields: [eventId], references: [id], onDelete: Cascade)
   city          City               @relation(fields: [cityId], references: [id])
+  channel       Channel?           @relation(fields: [channelDbId], references: [id])
 
-  @@unique([eventId, cityId])
+  @@unique([eventId, channelDbId])
   @@index([status])
   @@index([cityId, status])
+  @@index([channelDbId, status])
 }
 
 enum TelegramPostStatus {

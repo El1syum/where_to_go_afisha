@@ -4,6 +4,7 @@ import { AdminShell } from "@/components/admin/AdminShell";
 import Link from "next/link";
 import { formatDate } from "@/lib/utils";
 import { EventActions } from "@/components/admin/EventActions";
+import { PublishButton } from "@/components/admin/PublishButton";
 
 const PAGE_SIZE = 30;
 
@@ -45,12 +46,13 @@ export default async function AdminEventsPage({ searchParams }: Props) {
     where.isActive = false;
   }
 
-  const [events, total, cities, categories] = await Promise.all([
+  const [events, total, cities, categories, allChannels] = await Promise.all([
     prisma.event.findMany({
       where,
       include: {
         city: { select: { name: true, slug: true } },
         category: { select: { name: true, slug: true } },
+        telegramPosts: { select: { channelDbId: true, status: true } },
       },
       orderBy: { date: "desc" },
       skip: (page - 1) * PAGE_SIZE,
@@ -59,6 +61,7 @@ export default async function AdminEventsPage({ searchParams }: Props) {
     prisma.event.count({ where }),
     prisma.city.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" }, select: { slug: true, name: true } }),
     prisma.category.findMany({ orderBy: { sortOrder: "asc" }, select: { slug: true, name: true } }),
+    prisma.channel.findMany({ where: { isActive: true }, select: { id: true, name: true, platform: true, channelId: true, isActive: true, cityId: true } }),
   ]);
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
@@ -135,7 +138,14 @@ export default async function AdminEventsPage({ searchParams }: Props) {
                   </span>
                 </td>
                 <td className="px-4 py-3">
-                  <EventActions eventId={event.id} isActive={event.isActive} />
+                  <div className="flex items-center gap-2">
+                    <EventActions eventId={event.id} isActive={event.isActive} />
+                    <PublishButton
+                      eventId={event.id}
+                      channels={allChannels.filter(ch => ch.cityId === event.cityId)}
+                      publishedChannelIds={event.telegramPosts.filter(p => p.status === "SENT" && p.channelDbId).map(p => p.channelDbId!)}
+                    />
+                  </div>
                 </td>
               </tr>
             ))}

@@ -8,7 +8,8 @@ const NAV_ITEMS = [
   { href: "/admin/events", label: "Мероприятия", icon: "🎫" },
   { href: "/admin/cities", label: "Города", icon: "🏙️" },
   { href: "/admin/categories", label: "Категории", icon: "📂" },
-  { href: "/admin/telegram", label: "Telegram", icon: "📨" },
+  { href: "/admin/channels", label: "Каналы", icon: "📡" },
+  { href: "/admin/telegram", label: "Публикации", icon: "📨" },
   { href: "/admin/import", label: "Импорт", icon: "📥" },
 ];
 
