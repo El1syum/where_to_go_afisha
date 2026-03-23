@@ -1,11 +1,14 @@
 "use client";
 
+import { useState } from "react";
+
 interface ShareButtonsProps {
   title: string;
   url: string;
 }
 
 export function ShareButtons({ title, url }: ShareButtonsProps) {
+  const [copied, setCopied] = useState(false);
   const encodedUrl = encodeURIComponent(url);
   const encodedTitle = encodeURIComponent(title);
 
@@ -32,7 +35,8 @@ export function ShareButtons({ title, url }: ShareButtonsProps) {
 
   async function copyLink() {
     await navigator.clipboard.writeText(url);
-    alert("Ссылка скопирована!");
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
   }
 
   return (
@@ -51,13 +55,20 @@ export function ShareButtons({ title, url }: ShareButtonsProps) {
             {link.name}
           </a>
         ))}
-        <button
-          onClick={copyLink}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm transition-colors hover:bg-secondary"
-        >
-          <span>🔗</span>
-          Копировать
-        </button>
+        <div className="relative">
+          <button
+            onClick={copyLink}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm transition-colors hover:bg-secondary"
+          >
+            <span>🔗</span>
+            Копировать
+          </button>
+          {copied && (
+            <div className="absolute bottom-full left-1/2 mb-2 -translate-x-1/2 animate-fade-in rounded-lg bg-foreground px-3 py-1.5 text-xs font-medium text-background shadow-lg">
+              Ссылка скопирована
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
