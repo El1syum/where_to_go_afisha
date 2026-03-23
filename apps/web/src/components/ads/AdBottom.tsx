@@ -21,6 +21,9 @@ export function AdBottom() {
           </div>
         ))}
       </div>
+      <div className="mt-4">
+        <YandexAd blockId="R-A-18977791-10" />
+      </div>
     </div>
   );
 }
