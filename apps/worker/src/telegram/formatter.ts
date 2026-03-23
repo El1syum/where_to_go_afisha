@@ -13,14 +13,15 @@ const CATEGORY_EMOJI: Record<string, string> = {
   events: "🎉",
 };
 
+const MONTHS = [
+  "января", "февраля", "марта", "апреля", "мая", "июня",
+  "июля", "августа", "сентября", "октября", "ноября", "декабря",
+];
+
 function formatDate(date: Date): string {
-  return date.toLocaleDateString("ru-RU", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  const d = date.getDate();
+  const m = MONTHS[date.getMonth()];
+  return `${d} ${m}`;
 }
 
 function formatPrice(price: number | null): string {
@@ -30,7 +31,7 @@ function formatPrice(price: number | null): string {
 
 export function formatTelegramPost(
   event: Event & { city: City; category: Category }
-): string {
+): { text: string; imageUrl: string | null } {
   const emoji = CATEGORY_EMOJI[event.category.slug] || "📌";
   const lines: string[] = [];
 
@@ -42,6 +43,8 @@ export function formatTelegramPost(
 
   if (event.place) {
     lines.push(`📍 ${event.place}`);
+  } else if (event.affiliateUrl) {
+    lines.push(`📍 <a href="${event.affiliateUrl}">Узнать на сайте</a>`);
   }
 
   lines.push(`💰 ${formatPrice(Number(event.price))}`);
@@ -60,5 +63,8 @@ export function formatTelegramPost(
   lines.push("");
   lines.push(`#${event.city.name.replace(/[^а-яА-ЯёЁa-zA-Z0-9]/g, "")} #${event.category.name.replace(/[^а-яА-ЯёЁa-zA-Z0-9]/g, "")}`);
 
-  return lines.join("\n");
+  return {
+    text: lines.join("\n"),
+    imageUrl: event.imageUrl || null,
+  };
 }

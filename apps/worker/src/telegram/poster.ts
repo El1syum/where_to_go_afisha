@@ -18,38 +18,65 @@ function delay(ms: number): Promise<void> {
 }
 
 export async function postNewEvents(): Promise<number> {
-  // Find cities with configured Telegram channels
-  const cities = await prisma.city.findMany({
+  const channels = await prisma.channel.findMany({
     where: {
       isActive: true,
-      telegramChannelId: { not: null },
+      platform: "TELEGRAM",
+    },
+    include: {
+      city: true,
     },
   });
 
-  if (cities.length === 0) {
-    logger.info("No cities with Telegram channels configured");
+  if (channels.length === 0) {
+    logger.info("No active Telegram channels configured");
     return 0;
   }
 
   let totalPosted = 0;
   const tgBot = getBot();
   const now = new Date();
+  const currentHour = now.getHours();
   const futureLimit = new Date(
     now.getTime() + config.telegram.daysAhead * 24 * 60 * 60 * 1000
   );
 
-  for (const city of cities) {
-    if (!city.telegramChannelId) continue;
+  for (const channel of channels) {
+    // Check publish hours
+    if (currentHour < channel.publishHourFrom || currentHour >= channel.publishHourTo) {
+      continue;
+    }
 
-    // Find events that haven't been posted to this city's channel
+    // Check daily limit
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const postedToday = await prisma.telegramPost.count({
+      where: {
+        channelDbId: channel.id,
+        status: "SENT",
+        sentAt: { gte: todayStart },
+      },
+    });
+
+    if (postedToday >= channel.maxPostsPerDay) {
+      continue;
+    }
+
+    // Build event filter
+    const categoryFilter = channel.categories
+      ? { slug: { in: JSON.parse(channel.categories) as string[] } }
+      : undefined;
+
     const events = await prisma.event.findMany({
       where: {
-        cityId: city.id,
+        cityId: channel.cityId,
         isActive: true,
         isApproved: true,
         date: { gt: now, lt: futureLimit },
+        ...(categoryFilter && { category: categoryFilter }),
+        ...(channel.kidsOnly && { isKids: true }),
+        ...(channel.minAge != null && { age: { gte: channel.minAge } }),
         telegramPosts: {
-          none: { cityId: city.id },
+          none: { channelDbId: channel.id },
         },
       },
       include: {
@@ -57,46 +84,65 @@ export async function postNewEvents(): Promise<number> {
         category: true,
       },
       orderBy: { date: "asc" },
-      take: config.telegram.maxPostsPerRun,
+      take: Math.min(config.telegram.maxPostsPerRun, channel.maxPostsPerDay - postedToday),
     });
 
     for (const event of events) {
       try {
-        const message = formatTelegramPost(event);
+        const { text, imageUrl } = formatTelegramPost(event);
+        let messageId: number;
 
-        const sent = await tgBot.api.sendMessage(
-          city.telegramChannelId,
-          message,
-          {
-            parse_mode: "HTML",
-            link_preview_options: { is_disabled: false },
-          }
-        );
+        if (imageUrl) {
+          // Send photo with caption
+          const sent = await tgBot.api.sendPhoto(
+            channel.channelId,
+            imageUrl,
+            {
+              caption: text,
+              parse_mode: "HTML",
+            }
+          );
+          messageId = sent.message_id;
+        } else {
+          // Send text only
+          const sent = await tgBot.api.sendMessage(
+            channel.channelId,
+            text,
+            {
+              parse_mode: "HTML",
+              link_preview_options: { is_disabled: false },
+            }
+          );
+          messageId = sent.message_id;
+        }
 
         await prisma.telegramPost.create({
           data: {
             eventId: event.id,
-            cityId: city.id,
-            messageId: sent.message_id,
-            channelId: city.telegramChannelId,
+            cityId: channel.cityId,
+            channelDbId: channel.id,
+            messageId,
+            channelId: channel.channelId,
             status: "SENT",
             sentAt: new Date(),
           },
         });
 
         totalPosted++;
+        logger.info({ eventId: event.id, channel: channel.channelId }, "Posted to Telegram");
         await delay(config.telegram.postDelay);
       } catch (err) {
         logger.error(
-          { eventId: event.id, citySlug: city.slug, err },
+          { eventId: event.id, channel: channel.channelId, err },
           "Failed to post to Telegram"
         );
 
         await prisma.telegramPost.create({
           data: {
             eventId: event.id,
-            cityId: city.id,
-            channelId: city.telegramChannelId,
+            cityId: channel.cityId,
+            channelDbId: channel.id,
+            channelId: channel.channelId,
             status: "FAILED",
             errorMessage:
               err instanceof Error ? err.message : String(err),
