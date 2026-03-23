@@ -165,14 +165,23 @@ export default async function EventPage({ params }: EventPageProps) {
               <h2 className="mb-3 text-lg font-semibold">На карте</h2>
               <div className="overflow-hidden rounded-xl border border-border">
                 <iframe
-                  src={`https://yandex.ru/map-widget/v1/?text=${encodeURIComponent(event.place + ", " + event.city.name)}&z=15&l=map`}
+                  src={`https://yandex.ru/map-widget/v1/?text=${encodeURIComponent(event.place + ", " + event.city.name)}&z=16&l=map&pt=${encodeURIComponent(event.place + ", " + event.city.name)}~pm2rdm`}
                   width="100%"
                   height="300"
                   frameBorder="0"
                   allowFullScreen
+                  loading="lazy"
                   className="block"
                 />
               </div>
+              <a
+                href={`https://yandex.ru/maps/?text=${encodeURIComponent(event.place + ", " + event.city.name)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 inline-flex items-center gap-1 text-sm text-primary hover:underline"
+              >
+                Открыть в Яндекс.Картах →
+              </a>
             </div>
           )}
         </div>
