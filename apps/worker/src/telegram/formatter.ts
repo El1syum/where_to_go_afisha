@@ -61,7 +61,11 @@ export function formatTelegramPost(
   }
 
   lines.push("");
-  lines.push(`#${event.city.name.replace(/[^а-яА-ЯёЁa-zA-Z0-9]/g, "")} #${event.category.name.replace(/[^а-яА-ЯёЁa-zA-Z0-9]/g, "")}`);
+  const tags = [`#${event.category.name.replace(/[^а-яА-ЯёЁa-zA-Z0-9]/g, "")}`];
+  if (event.place) {
+    tags.push(`#${event.place.replace(/[^а-яА-ЯёЁa-zA-Z0-9]/g, "")}`);
+  }
+  lines.push(tags.join(" "));
 
   return {
     text: lines.join("\n"),
