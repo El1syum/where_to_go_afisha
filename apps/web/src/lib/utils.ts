@@ -14,6 +14,7 @@ export function formatPrice(price: unknown): string {
 
 export function formatDate(date: Date | string): string {
   const d = typeof date === "string" ? new Date(date) : date;
+  d.setDate(d.getDate() + 1);
   return d.toLocaleDateString("ru-RU", {
     day: "numeric",
     month: "long",
@@ -23,12 +24,11 @@ export function formatDate(date: Date | string): string {
 
 export function formatDateTime(date: Date | string): string {
   const d = typeof date === "string" ? new Date(date) : date;
+  d.setDate(d.getDate() + 1);
   return d.toLocaleDateString("ru-RU", {
     day: "numeric",
     month: "long",
     year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
   });
 }
 
