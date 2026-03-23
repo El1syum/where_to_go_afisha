@@ -238,7 +238,7 @@ export default async function EventPage({ params }: EventPageProps) {
       {samePlace.length > 0 && (
         <div className="mt-10">
           <h2 className="mb-4 text-xl font-bold">Другие мероприятия — {event.place}</h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {samePlace.map((e) => (
               <EventCard key={e.slug} event={e} citySlug={citySlug} />
             ))}
@@ -250,11 +250,25 @@ export default async function EventPage({ params }: EventPageProps) {
       {similarEvents.length > 0 && (
         <div className="mt-10">
           <h2 className="mb-4 text-xl font-bold">Похожие мероприятия</h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {similarEvents.map((e) => (
               <EventCard key={e.slug} event={e} citySlug={citySlug} />
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Mobile sticky buy button */}
+      {event.affiliateUrl && (
+        <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background/95 p-3 backdrop-blur lg:hidden">
+          <a
+            href={event.affiliateUrl}
+            target="_blank"
+            rel="nofollow sponsored noopener"
+            className="block w-full rounded-lg bg-primary py-3 text-center font-semibold text-primary-foreground"
+          >
+            Купить билет — {formatPrice(event.price ? Number(event.price) : null)}
+          </a>
         </div>
       )}
     </>

@@ -33,9 +33,9 @@ export function Header({ cities, currentCityName }: HeaderProps) {
     <>
       <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4">
-          <Link href={citySlug ? `/${citySlug}` : "/"} className="shrink-0 text-xl font-bold">
-            {currentCityName && <span className="text-foreground">{currentCityName} | </span>}
-            <span className="text-primary">Куда сходить?</span>
+          <Link href={citySlug ? `/${citySlug}` : "/"} className="shrink-0 font-bold">
+            {currentCityName && <span className="hidden text-xl text-foreground sm:inline">{currentCityName} | </span>}
+            <span className="text-lg text-primary sm:text-xl">Куда сходить?</span>
           </Link>
 
           {/* Desktop search */}
