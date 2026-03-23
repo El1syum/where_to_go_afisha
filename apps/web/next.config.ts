@@ -7,7 +7,14 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "avatars.mds.yandex.net",
-        pathname: "/get-afishanew/**",
+      },
+      {
+        protocol: "https",
+        hostname: "cdn.kassir.ru",
+      },
+      {
+        protocol: "https",
+        hostname: "*.kassir.ru",
       },
     ],
   },
