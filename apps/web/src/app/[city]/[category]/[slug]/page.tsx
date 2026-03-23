@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { formatDateTime, formatPrice } from "@/lib/utils";
+import { formatDateTime, formatDate, formatPrice } from "@/lib/utils";
 import { JsonLd, eventJsonLd, breadcrumbJsonLd } from "@/components/seo/JsonLd";
 import { AdInContent } from "@/components/ads/AdInContent";
+import { ShareButtons } from "@/components/events/ShareButtons";
+import { EventCard } from "@/components/events/EventCard";
 export const revalidate = 3600;
 
 interface EventPageProps {
@@ -50,14 +53,52 @@ export default async function EventPage({ params }: EventPageProps) {
   const event = await prisma.event.findFirst({
     where: { slug },
     include: {
-      city: { select: { name: true, namePrepositional: true } },
-      category: { select: { slug: true, name: true, icon: true } },
+      city: { select: { id: true, name: true, namePrepositional: true } },
+      category: { select: { id: true, slug: true, name: true, icon: true } },
     },
   });
 
   if (!event) notFound();
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
+  const eventUrl = `${siteUrl}/${citySlug}/${categorySlug}/${slug}`;
+
+  // Похожие мероприятия (та же категория, тот же город, ближайшие по дате)
+  const similarEvents = await prisma.event.findMany({
+    where: {
+      cityId: event.city.id,
+      categoryId: event.category.id,
+      isActive: true,
+      isApproved: true,
+      date: { gte: new Date() },
+      id: { not: event.id },
+    },
+    include: {
+      category: { select: { slug: true, name: true, icon: true } },
+    },
+    orderBy: { date: "asc" },
+    take: 4,
+  });
+
+  // Другие мероприятия в этом месте
+  const samePlace = event.place
+    ? await prisma.event.findMany({
+        where: {
+          place: event.place,
+          cityId: event.city.id,
+          isActive: true,
+          isApproved: true,
+          date: { gte: new Date() },
+          id: { not: event.id },
+          categoryId: { not: event.category.id },
+        },
+        include: {
+          category: { select: { slug: true, name: true, icon: true } },
+        },
+        orderBy: { date: "asc" },
+        take: 4,
+      })
+    : [];
 
   return (
     <>
@@ -75,7 +116,7 @@ export default async function EventPage({ params }: EventPageProps) {
         { name: "Главная", url: siteUrl },
         { name: event.city.name, url: `${siteUrl}/${citySlug}` },
         { name: event.category.name, url: `${siteUrl}/${citySlug}/${categorySlug}` },
-        { name: event.title, url: `${siteUrl}/${citySlug}/${categorySlug}/${slug}` },
+        { name: event.title, url: eventUrl },
       ])} />
 
       {/* Breadcrumbs */}
@@ -114,6 +155,26 @@ export default async function EventPage({ params }: EventPageProps) {
           )}
 
           <AdInContent />
+
+          {/* Поделиться */}
+          <ShareButtons title={event.title} url={eventUrl} />
+
+          {/* Яндекс.Карта */}
+          {event.place && (
+            <div className="mt-8">
+              <h2 className="mb-3 text-lg font-semibold">На карте</h2>
+              <div className="overflow-hidden rounded-xl border border-border">
+                <iframe
+                  src={`https://yandex.ru/map-widget/v1/?text=${encodeURIComponent(event.place + ", " + event.city.name)}&z=15&l=map`}
+                  width="100%"
+                  height="300"
+                  frameBorder="0"
+                  allowFullScreen
+                  className="block"
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Sidebar */}
@@ -172,6 +233,30 @@ export default async function EventPage({ params }: EventPageProps) {
           </div>
         </div>
       </div>
+
+      {/* Другие мероприятия в этом месте */}
+      {samePlace.length > 0 && (
+        <div className="mt-10">
+          <h2 className="mb-4 text-xl font-bold">Другие мероприятия — {event.place}</h2>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {samePlace.map((e) => (
+              <EventCard key={e.slug} event={e} citySlug={citySlug} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Похожие мероприятия */}
+      {similarEvents.length > 0 && (
+        <div className="mt-10">
+          <h2 className="mb-4 text-xl font-bold">Похожие мероприятия</h2>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {similarEvents.map((e) => (
+              <EventCard key={e.slug} event={e} citySlug={citySlug} />
+            ))}
+          </div>
+        </div>
+      )}
     </>
   );
 }
