@@ -14,9 +14,11 @@ const FOOTER_BLOCKS = [
 export function AdBottom() {
   return (
     <div className="mx-auto mt-8 max-w-7xl px-4">
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
+      <div className="flex gap-4 overflow-x-auto">
         {FOOTER_BLOCKS.map((id) => (
-          <YandexAd key={id} blockId={id} />
+          <div key={id} className="aspect-square w-[160px] shrink-0">
+            <YandexAd blockId={id} />
+          </div>
         ))}
       </div>
     </div>
