@@ -2,24 +2,23 @@
 
 import { YandexAd } from "./YandexAd";
 
-const BOTTOM_BLOCK_ID = process.env.NEXT_PUBLIC_YAN_BOTTOM || "";
+const FOOTER_BLOCKS = [
+  "R-A-18977791-3",
+  "R-A-18977791-4",
+  "R-A-18977791-5",
+  "R-A-18977791-6",
+  "R-A-18977791-7",
+  "R-A-18977791-8",
+];
 
 export function AdBottom() {
-  if (!BOTTOM_BLOCK_ID) {
-    return (
-      <div className="mx-auto mt-8 max-w-7xl px-4">
-        <div className="rounded-xl border border-dashed border-border bg-secondary/30 p-4">
-          <div className="flex h-[120px] items-center justify-center text-xs text-muted-foreground">
-            Рекламный блок (нижний)
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="mx-auto mt-8 max-w-7xl px-4">
-      <YandexAd blockId={BOTTOM_BLOCK_ID} />
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
+        {FOOTER_BLOCKS.map((id) => (
+          <YandexAd key={id} blockId={id} />
+        ))}
+      </div>
     </div>
   );
 }
