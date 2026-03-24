@@ -38,6 +38,8 @@ services:
       NEXT_PUBLIC_YAN_SIDEBAR: ${YAN_SIDEBAR:-}
       NEXT_PUBLIC_YAN_BOTTOM: ${YAN_BOTTOM:-}
       NEXT_PUBLIC_YAN_CONTENT: ${YAN_CONTENT:-}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      SITE_URL: ${SITE_URL}
     ports:
       - "127.0.0.1:3000:3000"
     depends_on:
