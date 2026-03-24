@@ -5,6 +5,7 @@ import Link from "next/link";
 import { formatDate } from "@/lib/utils";
 import { EventActions } from "@/components/admin/EventActions";
 import { PublishButton } from "@/components/admin/PublishButton";
+import { CitySelect } from "@/components/admin/CitySelect";
 
 const PAGE_SIZE = 30;
 
@@ -86,10 +87,7 @@ export default async function AdminEventsPage({ searchParams }: Props) {
         </div>
         <div>
           <label className="mb-1 block text-xs text-muted-foreground">Город</label>
-          <select name="city" defaultValue={cityFilter} className="rounded-lg border border-border bg-background px-3 py-2 text-sm">
-            <option value="">Все</option>
-            {cities.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
-          </select>
+          <CitySelect cities={cities} name="city" defaultValue={cityFilter} />
         </div>
         <div>
           <label className="mb-1 block text-xs text-muted-foreground">Категория</label>
