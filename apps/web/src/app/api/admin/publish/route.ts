@@ -61,14 +61,10 @@ export async function POST(request: NextRequest) {
   // AI rephrase if enabled for this channel
   let description = "";
   if (channel.aiRephrase && event.description) {
-    const rephrased = await rephraseText(
-      `Мероприятие: ${event.title}\nОписание: ${event.description.substring(0, 500)}`,
-      channel.aiPrompt,
-      channel.aiModel,
-    );
-    // Only use if actually different from title
+    const input = `Мероприятие: ${event.title}\nМесто: ${cleanPlace || "не указано"}\nКатегория: ${event.category.name}\n\nОписание:\n${event.description.substring(0, 1000)}`;
+    const rephrased = await rephraseText(input, channel.aiPrompt, channel.aiModel);
     if (rephrased && !rephrased.startsWith(event.title)) {
-      description = rephrased.substring(0, 200);
+      description = rephrased.substring(0, 500);
     }
   }
 

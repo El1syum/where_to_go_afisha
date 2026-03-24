@@ -94,16 +94,15 @@ export async function postNewEvents(): Promise<number> {
 
         // AI rephrase if enabled
         if (channel.aiRephrase && event.description) {
-          const snippet = await rephraseText(
-            `${event.title}\n\n${event.description.substring(0, 500)}`,
-            channel.aiPrompt,
-            channel.aiModel,
-          );
-          // Insert rephrased snippet after title
-          text = text.replace(
-            `<b>${event.title}</b>\n`,
-            `<b>${event.title}</b>\n${snippet.substring(0, 200)}\n`,
-          );
+          const cleanPlace = event.place ? event.place.split(/\s*&\s*/)[0].trim() : "не указано";
+          const input = `Мероприятие: ${event.title}\nМесто: ${cleanPlace}\nКатегория: ${event.category.name}\n\nОписание:\n${event.description.substring(0, 1000)}`;
+          const snippet = await rephraseText(input, channel.aiPrompt, channel.aiModel);
+          if (snippet && !snippet.startsWith(event.title)) {
+            text = text.replace(
+              `<b>${event.title}</b>\n`,
+              `<b>${event.title}</b>\n\n${snippet.substring(0, 500)}\n`,
+            );
+          }
         }
 
         let messageId: number;
