@@ -29,10 +29,13 @@ function formatPrice(price: number | null): string {
   return `от ${price.toLocaleString("ru-RU")} ₽`;
 }
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || "https://kudaafisha.ru";
+
 export function formatTelegramPost(
   event: Event & { city: City; category: Category }
 ): { text: string; imageUrl: string | null } {
   const emoji = CATEGORY_EMOJI[event.category.slug] || "📌";
+  const eventPageUrl = `${SITE_URL}/${event.city.slug}/${event.category.slug}/${event.slug}`;
   const lines: string[] = [];
 
   lines.push(`${emoji} <b>${event.category.name}</b>`);
@@ -43,8 +46,8 @@ export function formatTelegramPost(
 
   if (event.place) {
     lines.push(`📍 ${event.place}`);
-  } else if (event.affiliateUrl) {
-    lines.push(`📍 <a href="${event.affiliateUrl}">Узнать на сайте</a>`);
+  } else {
+    lines.push(`📍 <a href="${eventPageUrl}">Узнать на сайте</a>`);
   }
 
   lines.push(`💰 ${formatPrice(Number(event.price))}`);
@@ -55,10 +58,8 @@ export function formatTelegramPost(
   if (event.isPremiere) badges.push("🌟 Премьера");
   if (badges.length > 0) lines.push(badges.join(" | "));
 
-  if (event.affiliateUrl) {
-    lines.push("");
-    lines.push(`🎟 <a href="${event.affiliateUrl}">Купить билет</a>`);
-  }
+  lines.push("");
+  lines.push(`🎟 <a href="${eventPageUrl}">Купить билет</a>`);
 
   lines.push("");
   const tags = [`#${event.category.name.replace(/[^а-яА-ЯёЁa-zA-Z0-9]/g, "")}`];
