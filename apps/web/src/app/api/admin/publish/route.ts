@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
     let messageId: number;
 
     if (event.imageUrl) {
-      const res = await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
+      const photoRes = await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -97,9 +97,24 @@ export async function POST(request: NextRequest) {
           parse_mode: "HTML",
         }),
       });
-      const data = await res.json();
-      if (!data.ok) throw new Error(data.description || "Telegram error");
-      messageId = data.result.message_id;
+      const photoData = await photoRes.json();
+      if (photoData.ok) {
+        messageId = photoData.result.message_id;
+      } else {
+        // Fallback: send as text if photo fails
+        const fallbackRes = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chat_id: channel.channelId,
+            text,
+            parse_mode: "HTML",
+          }),
+        });
+        const fallbackData = await fallbackRes.json();
+        if (!fallbackData.ok) throw new Error(fallbackData.description || "Telegram error");
+        messageId = fallbackData.result.message_id;
+      }
     } else {
       const res = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
         method: "POST",

@@ -109,16 +109,28 @@ export async function postNewEvents(): Promise<number> {
         let messageId: number;
 
         if (imageUrl) {
-          // Send photo with caption
-          const sent = await tgBot.api.sendPhoto(
-            channel.channelId,
-            imageUrl,
-            {
-              caption: text,
-              parse_mode: "HTML",
-            }
-          );
-          messageId = sent.message_id;
+          // Send photo with caption, fallback to text if photo fails
+          try {
+            const sent = await tgBot.api.sendPhoto(
+              channel.channelId,
+              imageUrl,
+              {
+                caption: text,
+                parse_mode: "HTML",
+              }
+            );
+            messageId = sent.message_id;
+          } catch {
+            const sent = await tgBot.api.sendMessage(
+              channel.channelId,
+              text,
+              {
+                parse_mode: "HTML",
+                link_preview_options: { is_disabled: false },
+              }
+            );
+            messageId = sent.message_id;
+          }
         } else {
           // Send text only
           const sent = await tgBot.api.sendMessage(
