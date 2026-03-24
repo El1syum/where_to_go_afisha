@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getAdmin } from "@/lib/auth";
+import { rephraseText } from "@/lib/ai";
 
 export async function POST(request: NextRequest) {
   const admin = await getAdmin();
@@ -49,11 +50,24 @@ export async function POST(request: NextRequest) {
   const tags = [`#${event.category.name.replace(/[^а-яА-ЯёЁa-zA-Z0-9]/g, "")}`];
   if (event.place) tags.push(`#${event.place.replace(/[^а-яА-ЯёЁa-zA-Z0-9]/g, "")}`);
 
+  // AI rephrase if enabled for this channel
+  let title = event.title;
+  let description = "";
+  if (channel.aiRephrase && event.description) {
+    const rephrased = await rephraseText(
+      `${event.title}\n\n${event.description.substring(0, 500)}`,
+      channel.aiPrompt,
+      channel.aiModel,
+    );
+    // Use rephrased as description snippet
+    description = `\n${rephrased.substring(0, 200)}`;
+  }
+
   const text = [
     `${emoji} <b>${event.category.name}</b>`,
     "━━━━━━━━━━━━━━━",
-    `<b>${event.title}</b>`,
-    "",
+    `<b>${title}</b>`,
+    description,
     `📅 ${dateStr}`,
     placeLine,
     `💰 ${price}`,
