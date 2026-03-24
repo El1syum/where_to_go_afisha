@@ -16,6 +16,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "*.kassir.ru",
       },
+      {
+        protocol: "https",
+        hostname: "kudaafisha.ru",
+      },
     ],
   },
 };

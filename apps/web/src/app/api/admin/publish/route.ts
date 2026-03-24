@@ -102,20 +102,56 @@ export async function POST(request: NextRequest) {
     let messageId: number;
 
     if (event.imageUrl) {
-      const photoRes = await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chat_id: channel.channelId,
-          photo: event.imageUrl,
-          caption: text,
-          parse_mode: "HTML",
-        }),
-      });
-      const photoData = await photoRes.json();
-      if (photoData.ok) {
-        messageId = photoData.result.message_id;
-      } else {
+      let photoSent = false;
+
+      // If local image, send as file upload
+      const isLocal = event.imageUrl.includes("/api/images/");
+      if (isLocal) {
+        try {
+          const { readFile } = await import("fs/promises");
+          const { join } = await import("path");
+          const filename = event.imageUrl.split("/api/images/")[1];
+          const imagesDir = process.env.IMAGES_DIR || "/opt/afisha/images";
+          const filePath = join(imagesDir, filename);
+          const fileData = await readFile(filePath);
+          const blob = new Blob([fileData], { type: "image/jpeg" });
+          const formData = new FormData();
+          formData.append("chat_id", channel.channelId);
+          formData.append("photo", blob, filename);
+          formData.append("caption", text);
+          formData.append("parse_mode", "HTML");
+          const uploadRes = await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
+            method: "POST",
+            body: formData,
+          });
+          const uploadData = await uploadRes.json();
+          if (uploadData.ok) {
+            messageId = uploadData.result.message_id;
+            photoSent = true;
+          }
+        } catch {}
+      }
+
+      // Try URL-based send for remote images
+      if (!photoSent) {
+        const photoRes = await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chat_id: channel.channelId,
+            photo: event.imageUrl,
+            caption: text,
+            parse_mode: "HTML",
+          }),
+        });
+        const photoData = await photoRes.json();
+        if (photoData.ok) {
+          messageId = photoData.result.message_id;
+          photoSent = true;
+        }
+      }
+
+      if (!photoSent) {
         // Fallback: send as text if photo fails
         const fallbackRes = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
           method: "POST",
