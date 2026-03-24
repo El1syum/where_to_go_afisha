@@ -30,17 +30,14 @@ export function CityConfirmation({
       .find((c) => c.startsWith("city_confirmed="));
     if (confirmed) return;
 
-    // Detect city via API
+    // Detect city via API (only show popup, never redirect)
     fetch("/api/geo")
       .then((r) => r.json())
       .then((data) => {
         if (data.city && data.cityName) {
           setDetectedCity({ slug: data.city, name: data.cityName });
-
-          // If detected city differs from current, redirect first
-          if (data.city !== citySlug) {
-            router.replace(`/${data.city}`);
-          }
+        } else {
+          setDetectedCity({ slug: citySlug, name: currentCityName });
         }
         setVisible(true);
       })
@@ -56,6 +53,10 @@ export function CityConfirmation({
     document.cookie = `preferred_city=${slug};path=/;max-age=${365 * 24 * 60 * 60}`;
     document.cookie = `city_confirmed=1;path=/;max-age=${365 * 24 * 60 * 60}`;
     setVisible(false);
+    // Redirect only if user confirms a different city
+    if (slug !== citySlug) {
+      router.push(`/${slug}`);
+    }
   }
 
   function chooseAnother() {
