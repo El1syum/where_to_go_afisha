@@ -8,6 +8,7 @@ import { JsonLd, eventJsonLd, breadcrumbJsonLd } from "@/components/seo/JsonLd";
 import { AdInContent } from "@/components/ads/AdInContent";
 import { ShareButtons } from "@/components/events/ShareButtons";
 import { EventCard } from "@/components/events/EventCard";
+import { EventChannels } from "@/components/events/EventChannels";
 export const revalidate = 3600;
 
 interface EventPageProps {
@@ -62,6 +63,19 @@ export default async function EventPage({ params }: EventPageProps) {
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
   const eventUrl = `${siteUrl}/${citySlug}/${categorySlug}/${slug}`;
+
+  // Load channels for this city and publish status
+  const [channels, publishedPosts] = await Promise.all([
+    prisma.channel.findMany({
+      where: { cityId: event.city.id, isActive: true, channelUrl: { not: null } },
+      select: { id: true, platform: true, name: true, channelUrl: true, channelId: true },
+      orderBy: [{ platform: "asc" }, { name: "asc" }],
+    }),
+    prisma.telegramPost.findMany({
+      where: { eventId: event.id, status: "SENT" },
+      select: { channelDbId: true },
+    }),
+  ]);
 
   // Похожие мероприятия (та же категория, тот же город, ближайшие по дате)
   const similarEvents = await prisma.event.findMany({
@@ -240,6 +254,15 @@ export default async function EventPage({ params }: EventPageProps) {
               </a>
             )}
           </div>
+
+          {/* Channels block */}
+          {channels.length > 0 && (
+            <EventChannels
+              eventId={event.id}
+              channels={channels}
+              publishedChannelIds={publishedPosts.map((p) => p.channelDbId).filter(Boolean) as number[]}
+            />
+          )}
         </div>
       </div>
 
