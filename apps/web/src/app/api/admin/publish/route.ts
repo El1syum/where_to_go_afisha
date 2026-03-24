@@ -45,37 +45,52 @@ export async function POST(request: NextRequest) {
   const utm = `?utm_source=telegram&utm_medium=channel&utm_campaign=${encodeURIComponent(channel.channelId.replace("@", ""))}`;
   const eventUrl = `${siteUrl}/${event.city.slug}/${event.category.slug}/${event.slug}${utm}`;
 
-  const placeLine = event.place ? `📍 ${event.place}` : `📍 <a href="${eventUrl}">Узнать на сайте</a>`;
+  // Clean place: take only first venue if multiple separated by &
+  const cleanPlace = event.place
+    ? event.place.split(/\s*&\s*/)[0].trim()
+    : null;
+
+  const placeLine = cleanPlace ? `📍 ${cleanPlace}` : `📍 <a href="${eventUrl}">Узнать на сайте</a>`;
 
   const tags = [`#${event.category.name.replace(/[^а-яА-ЯёЁa-zA-Z0-9]/g, "")}`];
-  if (event.place) tags.push(`#${event.place.replace(/[^а-яА-ЯёЁa-zA-Z0-9]/g, "")}`);
+  if (cleanPlace) {
+    const placeTag = cleanPlace.replace(/[^а-яА-ЯёЁa-zA-Z0-9]/g, "");
+    if (placeTag.length <= 30) tags.push(`#${placeTag}`);
+  }
 
   // AI rephrase if enabled for this channel
-  let title = event.title;
   let description = "";
   if (channel.aiRephrase && event.description) {
     const rephrased = await rephraseText(
-      `${event.title}\n\n${event.description.substring(0, 500)}`,
+      `Мероприятие: ${event.title}\nОписание: ${event.description.substring(0, 500)}`,
       channel.aiPrompt,
       channel.aiModel,
     );
-    // Use rephrased as description snippet
-    description = `\n${rephrased.substring(0, 200)}`;
+    // Only use if actually different from title
+    if (rephrased && !rephrased.startsWith(event.title)) {
+      description = rephrased.substring(0, 200);
+    }
   }
 
-  const text = [
+  const lines = [
     `${emoji} <b>${event.category.name}</b>`,
     "━━━━━━━━━━━━━━━",
-    `<b>${title}</b>`,
-    description,
-    `📅 ${dateStr}`,
-    placeLine,
-    `💰 ${price}`,
-    "",
-    `🎟 <a href="${eventUrl}">Купить билет</a>`,
-    "",
-    tags.join(" "),
-  ].join("\n");
+    `<b>${event.title}</b>`,
+  ];
+  if (description) {
+    lines.push("");
+    lines.push(description);
+  }
+  lines.push("");
+  lines.push(`📅 ${dateStr}`);
+  lines.push(placeLine);
+  lines.push(`💰 ${price}`);
+  lines.push("");
+  lines.push(`🎟 <a href="${eventUrl}">Купить билет</a>`);
+  lines.push("");
+  lines.push(tags.join(" "));
+
+  const text = lines.join("\n");
 
   // Send to Telegram
   const botToken = process.env.TELEGRAM_BOT_TOKEN;

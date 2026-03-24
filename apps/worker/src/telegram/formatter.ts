@@ -40,6 +40,12 @@ export function formatTelegramPost(
     ? `?utm_source=telegram&utm_medium=channel&utm_campaign=${encodeURIComponent(channelId.replace("@", ""))}`
     : "";
   const eventPageUrl = `${SITE_URL}/${event.city.slug}/${event.category.slug}/${event.slug}${utm}`;
+
+  // Clean place: take only first venue if multiple separated by &
+  const cleanPlace = event.place
+    ? event.place.split(/\s*&\s*/)[0].trim()
+    : null;
+
   const lines: string[] = [];
 
   lines.push(`${emoji} <b>${event.category.name}</b>`);
@@ -48,8 +54,8 @@ export function formatTelegramPost(
   lines.push("");
   lines.push(`📅 ${formatDate(event.date)}`);
 
-  if (event.place) {
-    lines.push(`📍 ${event.place}`);
+  if (cleanPlace) {
+    lines.push(`📍 ${cleanPlace}`);
   } else {
     lines.push(`📍 <a href="${eventPageUrl}">Узнать на сайте</a>`);
   }
@@ -67,8 +73,9 @@ export function formatTelegramPost(
 
   lines.push("");
   const tags = [`#${event.category.name.replace(/[^а-яА-ЯёЁa-zA-Z0-9]/g, "")}`];
-  if (event.place) {
-    tags.push(`#${event.place.replace(/[^а-яА-ЯёЁa-zA-Z0-9]/g, "")}`);
+  if (cleanPlace) {
+    const placeTag = cleanPlace.replace(/[^а-яА-ЯёЁa-zA-Z0-9]/g, "");
+    if (placeTag.length <= 30) tags.push(`#${placeTag}`);
   }
   lines.push(tags.join(" "));
 
