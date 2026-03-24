@@ -89,7 +89,7 @@ export async function postNewEvents(): Promise<number> {
 
     for (const event of events) {
       try {
-        const { text, imageUrl } = formatTelegramPost(event);
+        const { text, imageUrl } = formatTelegramPost(event, channel.channelId);
         let messageId: number;
 
         if (imageUrl) {

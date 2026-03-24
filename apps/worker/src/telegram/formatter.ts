@@ -32,10 +32,14 @@ function formatPrice(price: number | null): string {
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || "https://kudaafisha.ru";
 
 export function formatTelegramPost(
-  event: Event & { city: City; category: Category }
+  event: Event & { city: City; category: Category },
+  channelId?: string,
 ): { text: string; imageUrl: string | null } {
   const emoji = CATEGORY_EMOJI[event.category.slug] || "📌";
-  const eventPageUrl = `${SITE_URL}/${event.city.slug}/${event.category.slug}/${event.slug}`;
+  const utm = channelId
+    ? `?utm_source=telegram&utm_medium=channel&utm_campaign=${encodeURIComponent(channelId.replace("@", ""))}`
+    : "";
+  const eventPageUrl = `${SITE_URL}/${event.city.slug}/${event.category.slug}/${event.slug}${utm}`;
   const lines: string[] = [];
 
   lines.push(`${emoji} <b>${event.category.name}</b>`);
