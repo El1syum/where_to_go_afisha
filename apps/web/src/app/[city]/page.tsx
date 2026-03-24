@@ -11,7 +11,7 @@ export const revalidate = 3600;
 
 interface CityPageProps {
   params: Promise<{ city: string }>;
-  searchParams: Promise<{ date?: string; exact?: string }>;
+  searchParams: Promise<{ date?: string; exact?: string; free?: string; kids?: string; age?: string }>;
 }
 
 export async function generateMetadata({ params }: CityPageProps): Promise<Metadata> {
@@ -38,7 +38,7 @@ export async function generateMetadata({ params }: CityPageProps): Promise<Metad
 
 export default async function CityPage({ params, searchParams }: CityPageProps) {
   const { city: citySlug } = await params;
-  const { date: dateFilter, exact: exactDate } = await searchParams;
+  const { date: dateFilter, exact: exactDate, free, kids, age } = await searchParams;
 
   const city = await prisma.city.findUnique({
     where: { slug: citySlug },
@@ -49,12 +49,15 @@ export default async function CityPage({ params, searchParams }: CityPageProps) 
 
   const dateRange = buildDateFilter(dateFilter, exactDate);
 
-  const where = {
+  const where: Record<string, unknown> = {
     cityId: city.id,
     isActive: true,
     isApproved: true,
     date: dateRange || { gte: new Date() },
   };
+  if (free === "1") where.price = { lte: 0 };
+  if (kids === "1") where.isKids = true;
+  if (age) where.age = { lte: parseInt(age) };
 
   const [events, total] = await Promise.all([
     prisma.event.findMany({

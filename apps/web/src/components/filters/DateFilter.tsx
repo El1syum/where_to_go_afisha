@@ -94,8 +94,23 @@ export function DateFilter() {
     ? selectedDate.toLocaleDateString("ru-RU", { day: "numeric", month: "short" })
     : null;
 
+  const isFree = searchParams.get("free") === "1";
+  const isKids = searchParams.get("kids") === "1";
+  const ageFilter = searchParams.get("age") || "";
+
+  function toggleParam(key: string, value: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (params.get(key) === value) {
+      params.delete(key);
+    } else {
+      params.set(key, value);
+    }
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  }
+
   return (
-    <div className="mb-6 flex flex-wrap items-center gap-2">
+    <div className="mb-6 space-y-2">
+    <div className="flex flex-wrap items-center gap-2">
       <button
         onClick={() => { setFilter(""); setCalendarOpen(false); }}
         className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${
@@ -211,6 +226,45 @@ export function DateFilter() {
           </div>
         )}
       </div>
+    </div>
+
+    {/* Extra filters */}
+    <div className="flex flex-wrap items-center gap-2">
+      <button
+        onClick={() => toggleParam("free", "1")}
+        className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${
+          isFree
+            ? "bg-green-500 text-white shadow-sm"
+            : "bg-secondary/70 text-foreground hover:bg-secondary"
+        }`}
+      >
+        Бесплатно
+      </button>
+      <button
+        onClick={() => toggleParam("kids", "1")}
+        className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${
+          isKids
+            ? "bg-green-500 text-white shadow-sm"
+            : "bg-secondary/70 text-foreground hover:bg-secondary"
+        }`}
+      >
+        Детское
+      </button>
+
+      {["0", "6", "12", "16", "18"].map((age) => (
+        <button
+          key={age}
+          onClick={() => toggleParam("age", age)}
+          className={`rounded-full px-3 py-2 text-sm font-medium transition-all ${
+            ageFilter === age
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "bg-secondary/70 text-foreground hover:bg-secondary"
+          }`}
+        >
+          {age}+
+        </button>
+      ))}
+    </div>
     </div>
   );
 }
