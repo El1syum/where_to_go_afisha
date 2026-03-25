@@ -6,9 +6,10 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatPrice(price: unknown): string {
-  if (price == null) return "Бесплатно";
+  if (price == null || price === "") return "Уточняйте при покупке";
   const num = typeof price === "number" ? price : Number(price);
-  if (isNaN(num) || num === 0) return "Бесплатно";
+  if (isNaN(num)) return "Уточняйте при покупке";
+  if (num === 0) return "Бесплатно";
   return `от ${num.toLocaleString("ru-RU")} ₽`;
 }
 

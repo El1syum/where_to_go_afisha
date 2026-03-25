@@ -40,7 +40,9 @@ export async function POST(request: NextRequest) {
   const d = event.date;
   const dateStr = `${d.getDate()} ${MONTHS[d.getMonth()]}`;
   const emoji = EMOJI[event.category.slug] || "📌";
-  const price = event.price && Number(event.price) > 0 ? `от ${Number(event.price).toLocaleString("ru-RU")} ₽` : "Бесплатно";
+  const price = event.price == null 
+    ? "Уточняйте при покупке" 
+    : (Number(event.price) > 0 ? `от ${Number(event.price).toLocaleString("ru-RU")} ₽` : "Бесплатно");
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || "https://kudaafisha.ru";
   const utm = `?utm_source=telegram&utm_medium=channel&utm_campaign=${encodeURIComponent(channel.channelId.replace("@", ""))}`;
   const eventUrl = `${siteUrl}/${event.city.slug}/${event.category.slug}/${event.slug}${utm}`;
@@ -82,7 +84,7 @@ export async function POST(request: NextRequest) {
   lines.push(placeLine);
   lines.push(`💰 ${price}`);
   lines.push("");
-  lines.push(`🎟 <a href="${eventUrl}">Купить билет</a>`);
+  lines.push(`🎟 <a href="${eventUrl}">Подробнее</a>`);
   lines.push("");
   lines.push(tags.join(" "));
 
@@ -95,7 +97,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    let messageId: number;
+    let messageId: number = 0;
 
     if (event.imageUrl) {
       let photoSent = false;

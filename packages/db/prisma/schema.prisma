@@ -122,6 +122,7 @@ model Channel {
   publishHourFrom Int           @default(9)       // Начало публикации (час)
   publishHourTo   Int           @default(22)      // Конец публикации (час)
   maxPostsPerDay  Int           @default(10)
+  postIntervalMinutes Int        @default(30)        // Мин. интервал между постами (минуты)
   // AI перефразирование
   aiRephrase      Boolean       @default(false)
   aiModel         String?                         // Модель OpenRouter

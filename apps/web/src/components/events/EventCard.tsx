@@ -25,15 +25,21 @@ export function EventCard({ event, citySlug }: EventCardProps) {
       className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-xl"
     >
       <div className="relative z-0 aspect-[4/3] overflow-hidden bg-secondary">
-        {event.imageUrl ? (
-          <Image
-            src={event.imageUrl}
-            alt={event.title}
-            fill
-            className="object-cover transition-transform duration-500 group-hover:scale-110"
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-          />
-        ) : (
+        {event.imageUrl ? (() => {
+          const isKassir = event.imageUrl!.includes("kassir.ru");
+          return (
+            <Image
+              src={event.imageUrl}
+              alt={event.title}
+              fill
+              className={isKassir
+                ? "object-contain bg-white transition-transform duration-500 group-hover:scale-110"
+                : "object-cover transition-transform duration-500 group-hover:scale-110"
+              }
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+            />
+          );
+        })() : (
           <div className="flex h-full items-center justify-center text-5xl opacity-30">
             {event.category.icon || "📌"}
           </div>

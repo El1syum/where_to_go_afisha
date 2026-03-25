@@ -15,6 +15,7 @@ export async function PATCH(
   const channel = await prisma.channel.update({
     where: { id: parseInt(id) },
     data: {
+      ...(body.cityId !== undefined && { cityId: body.cityId }),
       ...(body.name !== undefined && { name: body.name }),
       ...(body.description !== undefined && { description: body.description }),
       ...(body.channelId !== undefined && { channelId: body.channelId }),
@@ -31,6 +32,7 @@ export async function PATCH(
       ...(body.aiRephrase !== undefined && { aiRephrase: body.aiRephrase }),
       ...(body.aiModel !== undefined && { aiModel: body.aiModel }),
       ...(body.aiPrompt !== undefined && { aiPrompt: body.aiPrompt }),
+      ...(body.postIntervalMinutes !== undefined && { postIntervalMinutes: body.postIntervalMinutes }),
     },
   });
 

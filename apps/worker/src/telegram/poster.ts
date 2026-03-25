@@ -62,6 +62,24 @@ export async function postNewEvents(): Promise<number> {
       continue;
     }
 
+    // Check post interval
+    const lastPost = await prisma.telegramPost.findFirst({
+      where: {
+        channelDbId: channel.id,
+        status: "SENT",
+        sentAt: { not: null },
+      },
+      orderBy: { sentAt: "desc" },
+      select: { sentAt: true },
+    });
+
+    if (lastPost?.sentAt) {
+      const minutesSince = (now.getTime() - lastPost.sentAt.getTime()) / 60000;
+      if (minutesSince < (channel.postIntervalMinutes ?? 30)) {
+        continue;
+      }
+    }
+
     // Build event filter
     const categoryFilter = channel.categories
       ? { slug: { in: JSON.parse(channel.categories) as string[] } }

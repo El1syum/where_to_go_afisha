@@ -36,7 +36,7 @@ export async function generateMetadata({ params }: EventPageProps): Promise<Meta
 
   return {
     title: `${event.title} — ${dateStr} | ${event.city.name}`,
-    description: event.description?.substring(0, 160) || `${event.title} в ${event.city.namePrepositional || event.city.name}. Купить билеты онлайн.`,
+    description: event.description?.substring(0, 160) || `${event.title} в ${event.city.namePrepositional || event.city.name}. Подробнее на сайте.`,
     openGraph: {
       title: event.title,
       description: event.description?.substring(0, 200) || undefined,
@@ -250,7 +250,7 @@ export default async function EventPage({ params }: EventPageProps) {
                 rel="nofollow sponsored noopener"
                 className="mt-4 block w-full rounded-lg bg-primary py-3 text-center font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
               >
-                Купить билет
+                Подробнее
               </a>
             )}
           </div>
@@ -299,7 +299,7 @@ export default async function EventPage({ params }: EventPageProps) {
             rel="nofollow sponsored noopener"
             className="block w-full rounded-lg bg-primary py-3 text-center font-semibold text-primary-foreground"
           >
-            Купить билет — {formatPrice(event.price ? Number(event.price) : null)}
+            Подробнее — {formatPrice(event.price ? Number(event.price) : null)}
           </a>
         </div>
       )}

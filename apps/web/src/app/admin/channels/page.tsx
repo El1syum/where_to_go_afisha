@@ -62,7 +62,7 @@ export default async function AdminChannelsPage() {
                 <div className="text-right text-xs text-muted-foreground">
                   <div>{ch._count.posts} публикаций</div>
                   <div>{ch.publishHourFrom}:00–{ch.publishHourTo}:00</div>
-                  <div>макс. {ch.maxPostsPerDay}/день</div>
+                  <div>макс. {ch.maxPostsPerDay}/день, интервал {ch.postIntervalMinutes} мин</div>
                 </div>
               </div>
 

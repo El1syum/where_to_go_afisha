@@ -1,4 +1,19 @@
 import type { RawOffer } from "./parser.js";
+
+/**
+ * Parse date string, treating date-only values as Moscow time (UTC+3)
+ * to prevent timezone drift when stored in Postgres.
+ */
+function parseDateMoscow(dateStr: string): Date | null {
+  if (!dateStr) return null;
+  // If date has no time component (e.g. "2026-03-25"), treat as Moscow midnight
+  if (!dateStr.includes("T") && /^\d{4}-\d{2}-\d{2}$/.test(dateStr.trim())) {
+    const d = new Date(dateStr.trim() + "T00:00:00+03:00");
+    return isNaN(d.getTime()) ? null : d;
+  }
+  const d = new Date(dateStr);
+  return isNaN(d.getTime()) ? null : d;
+}
 import { extractCitySlug, extractOriginalUrl } from "./city-extractor.js";
 
 export interface TransformedEvent {
@@ -51,10 +66,12 @@ export function transformOffer(raw: RawOffer): TransformedEvent | null {
   const citySlug = extractCitySlug(raw.url);
   if (!citySlug) return null;
 
-  const date = new Date(raw.date);
-  if (isNaN(date.getTime())) return null;
+  const date = parseDateMoscow(raw.date);
+  if (!date) return null;
 
-  const price = raw.price ? parseFloat(raw.price) : null;
+  // Hide price for unavailable offers (e.g. kassir available="false")
+  const isAvailable = raw.available !== "false";
+  const price = isAvailable && raw.price ? parseFloat(raw.price) : null;
 
   return {
     externalId: raw.id,

@@ -23,6 +23,7 @@ interface ChannelFormProps {
     publishHourFrom: number;
     publishHourTo: number;
     maxPostsPerDay: number;
+    postIntervalMinutes: number;
     aiRephrase: boolean;
     aiModel: string | null;
     aiPrompt: string | null;
@@ -47,6 +48,7 @@ export function ChannelForm({ cities, categories, editChannel }: ChannelFormProp
     publishHourFrom: editChannel?.publishHourFrom ?? 9,
     publishHourTo: editChannel?.publishHourTo ?? 22,
     maxPostsPerDay: editChannel?.maxPostsPerDay ?? 10,
+    postIntervalMinutes: editChannel?.postIntervalMinutes ?? 30,
     aiRephrase: editChannel?.aiRephrase || false,
     aiModel: editChannel?.aiModel || "",
     aiPrompt: editChannel?.aiPrompt || "",
@@ -64,6 +66,7 @@ export function ChannelForm({ cities, categories, editChannel }: ChannelFormProp
       aiModel: form.aiModel || null,
       aiPrompt: form.aiPrompt || null,
       description: form.description || null,
+      postIntervalMinutes: Number(form.postIntervalMinutes) || 30,
       channelUrl: form.channelUrl || null,
     };
 
@@ -183,7 +186,7 @@ export function ChannelForm({ cities, categories, editChannel }: ChannelFormProp
 
           <div className="border-t border-border pt-3">
             <label className="mb-2 block text-xs font-semibold text-muted-foreground">Расписание</label>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-4 gap-3">
               <div>
                 <label className="mb-1 block text-xs text-muted-foreground">С (час)</label>
                 <input type="number" min={0} max={23} value={form.publishHourFrom} onChange={(e) => set("publishHourFrom", +e.target.value)} className={inputCls} />
@@ -195,6 +198,10 @@ export function ChannelForm({ cities, categories, editChannel }: ChannelFormProp
               <div>
                 <label className="mb-1 block text-xs text-muted-foreground">Макс./день</label>
                 <input type="number" min={1} value={form.maxPostsPerDay} onChange={(e) => set("maxPostsPerDay", +e.target.value)} className={inputCls} />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs text-muted-foreground">Интервал (мин)</label>
+                <input type="number" min={1} value={form.postIntervalMinutes} onChange={(e) => set("postIntervalMinutes", +e.target.value)} className={inputCls} />
               </div>
             </div>
           </div>
