@@ -55,7 +55,7 @@ export default async function CityPage({ params, searchParams }: CityPageProps) 
     isApproved: true,
     date: dateRange || { gte: new Date() },
   };
-  if (free === "1") where.OR = [{ price: { lte: 0 } }, { price: null }];
+  if (free === "1") where.OR = [{ price: { equals: 0 } }, { price: null }];
   if (kids === "1") where.isKids = true;
   if (age) where.age = { lte: parseInt(age) };
 
