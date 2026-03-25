@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 
 interface City { id: number; slug: string; name: string }
@@ -114,12 +114,11 @@ export function ChannelForm({ cities, categories, editChannel }: ChannelFormProp
 
         <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
           <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="mb-1 block text-xs text-muted-foreground">Город</label>
-              <select value={form.cityId} onChange={(e) => set("cityId", +e.target.value)} className={inputCls}>
-                {cities.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-            </div>
+            <CityDropdown
+              cities={cities}
+              value={form.cityId}
+              onChange={(id) => set("cityId", id)}
+            />
             <div>
               <label className="mb-1 block text-xs text-muted-foreground">Платформа</label>
               <select value={form.platform} onChange={(e) => set("platform", e.target.value)} className={inputCls}>
@@ -230,6 +229,64 @@ export function ChannelForm({ cities, categories, editChannel }: ChannelFormProp
           <button onClick={() => setOpen(false)} className="rounded-lg border border-border px-4 py-2 text-sm">Отмена</button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function CityDropdown({ cities, value, onChange }: { cities: City[]; value: number; onChange: (id: number) => void }) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const ref = useRef<HTMLDivElement>(null);
+
+  const sorted = useMemo(() => [...cities].sort((a, b) => a.name.localeCompare(b.name, "ru")), [cities]);
+  const filtered = search ? sorted.filter((c) => c.name.toLowerCase().includes(search.toLowerCase())) : sorted;
+  const selectedName = sorted.find((c) => c.id === value)?.name || "Выберите";
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    if (open) document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  return (
+    <div className="relative" ref={ref}>
+      <label className="mb-1 block text-xs text-muted-foreground">Город</label>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-left text-sm outline-none focus:border-primary"
+      >
+        {selectedName}
+      </button>
+      {open && (
+        <div className="absolute left-0 top-full z-50 mt-1 w-64 rounded-xl border border-border bg-card shadow-xl">
+          <div className="border-b border-border p-2">
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Поиск города..."
+              autoFocus
+              className="w-full rounded-lg border border-border bg-background px-3 py-1.5 text-sm outline-none focus:border-primary"
+            />
+          </div>
+          <div className="max-h-48 overflow-y-auto p-1">
+            {filtered.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => { onChange(c.id); setOpen(false); setSearch(""); }}
+                className={`w-full rounded-lg px-3 py-1.5 text-left text-sm transition-colors ${value === c.id ? "bg-primary/10 font-medium text-primary" : "hover:bg-secondary"}`}
+              >
+                {c.name}
+              </button>
+            ))}
+            {filtered.length === 0 && <div className="px-3 py-2 text-sm text-muted-foreground">Не найдено</div>}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
