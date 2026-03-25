@@ -114,6 +114,7 @@ export async function upsertBatch(
             age: event.age,
             isKids: event.isKids,
             isPremiere: event.isPremiere,
+            isAvailable: event.isAvailable,
             modifiedTime: event.modifiedTime,
             cityId,
             categoryId,

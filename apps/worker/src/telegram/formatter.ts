@@ -24,16 +24,55 @@ function formatDate(date: Date): string {
   return `${d} ${m}`;
 }
 
-function formatPrice(price: number | null): string {
-  if (price == null) return "Уточняйте при покупке";
-  if (price === 0) return "Бесплатно";
+function formatPrice(price: number | null, isAvailable: boolean = true): string {
+  if (!isAvailable) return "Уточняйте при покупке";
+  if (price == null || price === 0) return "Бесплатно";
   return `от ${price.toLocaleString("ru-RU")} ₽`;
 }
 
-// ... skipped down to the Купить билет link replacement ...
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || "https://kudaafisha.ru";
+
+export function formatTelegramPost(
+  event: Event & { city: City; category: Category },
+  channelId?: string,
+): { text: string; imageUrl: string | null } {
+  const emoji = CATEGORY_EMOJI[event.category.slug] || "📌";
+  const utm = channelId
+    ? `?utm_source=telegram&utm_medium=channel&utm_campaign=${encodeURIComponent(channelId.replace("@", ""))}`
+    : "";
+  const eventPageUrl = `${SITE_URL}/${event.city.slug}/${event.category.slug}/${event.slug}${utm}`;
+
+  // Clean place: take only first venue if multiple separated by &
+  const cleanPlace = event.place
+    ? event.place.split(/\s*&\s*/)[0].trim()
+    : null;
+
+  const lines: string[] = [];
+
+  lines.push(`${emoji} <b>${event.category.name}</b>`);
+  lines.push("━━━━━━━━━━━━━━━");
+  lines.push(`<b>${event.title}</b>`);
+  lines.push("");
+  lines.push(`📅 ${formatDate(event.date)}`);
+
+  if (cleanPlace) {
+    lines.push(`📍 ${cleanPlace}`);
+  } else {
+    lines.push(`📍 <a href="${eventPageUrl}">Узнать на сайте</a>`);
+  }
+
+  // @ts-expect-error - Prisma client needs regeneration
+  lines.push(`💰 ${formatPrice(Number(event.price), event.isAvailable)}`);
+
+  const badges: string[] = [];
+  if (event.age != null) badges.push(`${event.age}+`);
+  if (event.isKids) badges.push("👶 Детское");
+  if (event.isPremiere) badges.push("🌟 Премьера");
+  if (badges.length > 0) lines.push(badges.join(" | "));
 
   lines.push("");
-  lines.push(`🎟 <a href="${eventPageUrl}">Подробнее</a>`);
+  // @ts-expect-error - Prisma client needs regeneration
+  lines.push(`🎟 <a href="${eventPageUrl}">${event.isAvailable ? "Купить билет" : "Подробнее"}</a>`);
 
   lines.push("");
   const tags = [`#${event.category.name.replace(/[^а-яА-ЯёЁa-zA-Z0-9]/g, "")}`];

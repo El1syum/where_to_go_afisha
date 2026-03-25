@@ -5,11 +5,11 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatPrice(price: unknown): string {
-  if (price == null || price === "") return "Уточняйте при покупке";
+export function formatPrice(price: unknown, isAvailable: boolean = true): string {
+  if (!isAvailable) return "Уточняйте при покупке";
+  if (price == null || price === "") return "Бесплатно";
   const num = typeof price === "number" ? price : Number(price);
-  if (isNaN(num)) return "Уточняйте при покупке";
-  if (num === 0) return "Бесплатно";
+  if (isNaN(num) || num === 0) return "Бесплатно";
   return `от ${num.toLocaleString("ru-RU")} ₽`;
 }
 

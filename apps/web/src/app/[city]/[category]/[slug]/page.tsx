@@ -226,7 +226,7 @@ export default async function EventPage({ params }: EventPageProps) {
                 <span className="text-lg">💰</span>
                 <div>
                   <div className="text-sm text-muted-foreground">Цена</div>
-                  <div className="font-medium">{formatPrice(event.price ? Number(event.price) : null)}</div>
+                  <div className="font-medium">{formatPrice(event.price ? Number(event.price) : null, event.isAvailable)}</div>
                 </div>
               </div>
 
@@ -250,7 +250,7 @@ export default async function EventPage({ params }: EventPageProps) {
                 rel="nofollow sponsored noopener"
                 className="mt-4 block w-full rounded-lg bg-primary py-3 text-center font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
               >
-                Подробнее
+                {event.isAvailable ? "Купить билет" : "Подробнее"}
               </a>
             )}
           </div>
@@ -299,7 +299,7 @@ export default async function EventPage({ params }: EventPageProps) {
             rel="nofollow sponsored noopener"
             className="block w-full rounded-lg bg-primary py-3 text-center font-semibold text-primary-foreground"
           >
-            Подробнее — {formatPrice(event.price ? Number(event.price) : null)}
+            {event.isAvailable ? "Купить билет" : "Подробнее"} — {formatPrice(event.price ? Number(event.price) : null, event.isAvailable)}
           </a>
         </div>
       )}

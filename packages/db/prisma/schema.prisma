@@ -76,6 +76,7 @@ model Event {
   isPremiere      Boolean      @default(false)
   isActive        Boolean      @default(true)
   isApproved      Boolean      @default(true)
+  isAvailable     Boolean      @default(true)
   modifiedTime    BigInt?
   cityId          Int
   categoryId      Int

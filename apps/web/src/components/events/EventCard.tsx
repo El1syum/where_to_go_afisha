@@ -12,6 +12,7 @@ interface EventCardProps {
     imageUrl: string | null;
     isKids: boolean;
     isPremiere: boolean;
+    isAvailable: boolean;
     age: number | null;
     category: { slug: string; name: string; icon: string | null };
   };
@@ -71,7 +72,7 @@ export function EventCard({ event, citySlug }: EventCardProps) {
         {/* Price tag on image */}
         <div className="absolute bottom-2.5 right-2.5">
           <span className="rounded-full bg-background/90 px-3 py-1 text-xs font-bold text-foreground shadow-sm backdrop-blur-sm">
-            {formatPrice(event.price)}
+            {formatPrice(event.price, event.isAvailable)}
           </span>
         </div>
       </div>

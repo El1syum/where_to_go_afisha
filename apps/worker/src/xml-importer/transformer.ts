@@ -32,6 +32,7 @@ export interface TransformedEvent {
   age: number | null;
   isKids: boolean;
   isPremiere: boolean;
+  isAvailable: boolean;
   modifiedTime: bigint | null;
 }
 
@@ -89,6 +90,7 @@ export function transformOffer(raw: RawOffer): TransformedEvent | null {
     age: raw.age ? parseInt(raw.age, 10) : null,
     isKids: raw.isKids === "true",
     isPremiere: raw.isPremiere === "true",
+    isAvailable,
     modifiedTime: raw.modifiedTime ? BigInt(raw.modifiedTime) : null,
   };
 }
