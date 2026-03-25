@@ -61,7 +61,6 @@ export function formatTelegramPost(
     lines.push(`📍 <a href="${eventPageUrl}">Узнать на сайте</a>`);
   }
 
-  // @ts-expect-error - Prisma client needs regeneration
   lines.push(`💰 ${formatPrice(Number(event.price), event.isAvailable)}`);
 
   const badges: string[] = [];
@@ -71,7 +70,6 @@ export function formatTelegramPost(
   if (badges.length > 0) lines.push(badges.join(" | "));
 
   lines.push("");
-  // @ts-expect-error - Prisma client needs regeneration
   lines.push(`🎟 <a href="${eventPageUrl}">${event.isAvailable ? "Купить билет" : "Подробнее"}</a>`);
 
   lines.push("");

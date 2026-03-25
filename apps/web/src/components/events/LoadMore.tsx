@@ -12,6 +12,7 @@ interface Event {
   imageUrl: string | null;
   isKids: boolean;
   isPremiere: boolean;
+  isAvailable: boolean;
   age: number | null;
   category: { slug: string; name: string; icon: string | null };
 }
