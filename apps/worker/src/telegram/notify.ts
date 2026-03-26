@@ -1,7 +1,7 @@
 import { config } from "../shared/config.js";
 import { logger } from "../shared/logger.js";
 
-const ADMIN_CHAT_ID = process.env.ADMIN_TELEGRAM_ID || "5594683559";
+const ADMIN_CHAT_ID = process.env.ADMIN_TELEGRAM_ID || "-1003211104896";
 
 /**
  * Send a notification message to the admin via Telegram.
