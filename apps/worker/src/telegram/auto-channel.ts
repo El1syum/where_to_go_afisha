@@ -131,11 +131,12 @@ export function setupAutoChannel(bot: Bot) {
     // Send welcome message to the channel
     try {
       const siteUrl = process.env.SITE_URL || process.env.NEXT_PUBLIC_SITE_URL || "https://kudaafisha.ru";
-      const statusText = city
-        ? `✅ Канал привязан к городу: ${city.name}\n📋 Автопостинг: концерты, театр — 4 поста/день`
-        : `⚠️ Город не определён автоматически.\n🔧 Настройте в админке: ${siteUrl}/admin/channels`;
+      const cityUrl = city ? `${siteUrl}/${city.slug}` : siteUrl;
+      const text = city
+        ? `Смотрите все события города ${city.name} на портале\n${cityUrl}`
+        : `Смотрите все события на портале\n${siteUrl}`;
 
-      await ctx.api.sendMessage(chat.id, `👋 Бот подключён!\n\n${statusText}`);
+      await ctx.api.sendMessage(chat.id, text);
     } catch (err) {
       logger.warn({ err }, "Could not send welcome message");
     }
