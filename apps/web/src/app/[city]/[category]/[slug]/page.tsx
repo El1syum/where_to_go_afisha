@@ -145,18 +145,21 @@ export default async function EventPage({ params }: EventPageProps) {
       <div className="grid gap-8 lg:grid-cols-3">
         {/* Main content */}
         <div className="lg:col-span-2">
-          {event.imageUrl && (
+          {event.imageUrl && (() => {
+            const isKassir = event.imageUrl.includes("kassir.ru");
+            return (
             <div className="relative z-0 mb-6 aspect-[16/9] overflow-hidden rounded-xl">
               <Image
                 src={event.imageUrl}
                 alt={event.title}
                 fill
-                className="object-cover"
+                className={isKassir ? "object-contain bg-white" : "object-cover"}
                 sizes="(max-width: 1024px) 100vw, 66vw"
                 priority
               />
             </div>
-          )}
+            );
+          })()}
 
           <h1 className="mb-4 text-2xl font-bold md:text-3xl">{event.title}</h1>
 

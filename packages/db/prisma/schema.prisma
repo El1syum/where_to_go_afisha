@@ -123,7 +123,7 @@ model Channel {
   publishHourFrom Int           @default(9)       // Начало публикации (час)
   publishHourTo   Int           @default(22)      // Конец публикации (час)
   maxPostsPerDay  Int           @default(10)
-  postIntervalMinutes Int        @default(30)        // Мин. интервал между постами (минуты)
+  postIntervalMinutes Int        @default(60)        // Мин. интервал между постами (минуты)
   // Шаблон поста (null = глобальный из Setting)
   postTemplate    String?       @db.Text
   // AI перефразирование (для <<DESCRIPTION>>)

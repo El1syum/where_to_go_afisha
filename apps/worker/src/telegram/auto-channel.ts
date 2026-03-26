@@ -113,7 +113,7 @@ export function setupAutoChannel(bot: Bot) {
         publishHourFrom: 9,
         publishHourTo: 22,
         maxPostsPerDay: 4,
-        postIntervalMinutes: 120,
+        postIntervalMinutes: 60,
         aiRephrase: false,
       },
     });

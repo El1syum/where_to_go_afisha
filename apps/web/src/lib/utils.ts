@@ -19,6 +19,7 @@ export function formatDate(date: Date | string): string {
     day: "numeric",
     month: "long",
     year: "numeric",
+    timeZone: "Europe/Moscow",
   });
 }
 
@@ -28,6 +29,7 @@ export function formatDateTime(date: Date | string): string {
     day: "numeric",
     month: "long",
     year: "numeric",
+    timeZone: "Europe/Moscow",
   });
 }
 
