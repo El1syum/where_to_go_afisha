@@ -88,6 +88,17 @@ export function setupAutoChannel(bot: Bot) {
     // Try to detect city from username, then title
     const city = await detectCity(channelUsername) || await detectCity(channelTitle);
 
+    // Generate invite link
+    let inviteUrl: string | null = channelUsername ? `https://t.me/${channelUsername}` : null;
+    if (!inviteUrl) {
+      try {
+        const invite = await ctx.api.createChatInviteLink(chat.id, { creates_join_request: false });
+        inviteUrl = invite.invite_link;
+      } catch (err) {
+        logger.warn({ err }, "Could not create invite link");
+      }
+    }
+
     // Create channel
     const channel = await prisma.channel.create({
       data: {
@@ -96,8 +107,8 @@ export function setupAutoChannel(bot: Bot) {
         name: channelTitle || channelUsername || "Новый канал",
         description: city ? `Автопостинг: ${city.name}` : "Город не определён",
         channelId: channelUsername ? `@${channelUsername}` : chatId,
-        channelUrl: channelUsername ? `https://t.me/${channelUsername}` : null,
-        isActive: !!city, // auto-posting only if city detected
+        channelUrl: inviteUrl,
+        isActive: !!city,
         categories: JSON.stringify(["concerts", "theatre"]),
         publishHourFrom: 9,
         publishHourTo: 22,
@@ -113,6 +124,7 @@ export function setupAutoChannel(bot: Bot) {
         `✅ Новый канал подключён!\n\n` +
         `Канал: ${channelTitle}\n` +
         `ID: ${channel.channelId}\n` +
+        `Ссылка: ${inviteUrl || "нет"}\n` +
         `Город: ${city.name}\n` +
         `Автопостинг: ВКЛ\n` +
         `Категории: Концерты, Театр\n` +
@@ -123,6 +135,7 @@ export function setupAutoChannel(bot: Bot) {
         `⚠️ Новый канал, город НЕ определён\n\n` +
         `Канал: ${channelTitle}\n` +
         `ID: ${channel.channelId}\n` +
+        `Ссылка: ${inviteUrl || "нет"}\n` +
         `Автопостинг: ВЫКЛ\n\n` +
         `Настройте вручную: /admin/channels`
       );
