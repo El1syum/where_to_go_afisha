@@ -26,6 +26,7 @@ export async function POST(request: NextRequest) {
       aiModel: body.aiModel || null,
       aiPrompt: body.aiPrompt || null,
       postIntervalMinutes: body.postIntervalMinutes ?? 30,
+      postTemplate: body.postTemplate || null,
     },
   });
 

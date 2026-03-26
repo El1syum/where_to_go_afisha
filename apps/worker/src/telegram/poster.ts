@@ -3,7 +3,6 @@ import { prisma } from "../shared/db.js";
 import { logger } from "../shared/logger.js";
 import { config } from "../shared/config.js";
 import { formatTelegramPost } from "./formatter.js";
-import { rephraseText } from "../shared/ai.js";
 
 let bot: Bot | null = null;
 
@@ -108,20 +107,14 @@ export async function postNewEvents(): Promise<number> {
 
     for (const event of events) {
       try {
-        let { text, imageUrl } = formatTelegramPost(event, channel.channelId);
-
-        // AI rephrase if enabled
-        if (channel.aiRephrase && event.description) {
-          const cleanPlace = event.place ? event.place.split(/\s*&\s*/)[0].trim() : "не указано";
-          const input = `Мероприятие: ${event.title}\nМесто: ${cleanPlace}\nКатегория: ${event.category.name}\n\nОписание:\n${event.description.substring(0, 1000)}`;
-          const snippet = await rephraseText(input, channel.aiPrompt, channel.aiModel);
-          if (snippet && !snippet.startsWith(event.title)) {
-            text = text.replace(
-              `<b>${event.title}</b>\n`,
-              `<b>${event.title}</b>\n\n${snippet.substring(0, 500)}\n`,
-            );
-          }
-        }
+        const { text, imageUrl } = await formatTelegramPost(
+          event,
+          channel.channelId,
+          channel.postTemplate,
+          channel.aiRephrase,
+          channel.aiPrompt,
+          channel.aiModel,
+        );
 
         let messageId: number;
 

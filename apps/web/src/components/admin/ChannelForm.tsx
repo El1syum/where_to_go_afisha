@@ -24,6 +24,7 @@ interface ChannelFormProps {
     publishHourTo: number;
     maxPostsPerDay: number;
     postIntervalMinutes: number;
+    postTemplate: string | null;
     aiRephrase: boolean;
     aiModel: string | null;
     aiPrompt: string | null;
@@ -49,6 +50,7 @@ export function ChannelForm({ cities, categories, editChannel }: ChannelFormProp
     publishHourTo: editChannel?.publishHourTo ?? 22,
     maxPostsPerDay: editChannel?.maxPostsPerDay ?? 10,
     postIntervalMinutes: editChannel?.postIntervalMinutes ?? 30,
+    postTemplate: editChannel?.postTemplate || "",
     aiRephrase: editChannel?.aiRephrase || false,
     aiModel: editChannel?.aiModel || "",
     aiPrompt: editChannel?.aiPrompt || "",
@@ -67,6 +69,7 @@ export function ChannelForm({ cities, categories, editChannel }: ChannelFormProp
       aiPrompt: form.aiPrompt || null,
       description: form.description || null,
       postIntervalMinutes: Number(form.postIntervalMinutes) || 30,
+      postTemplate: form.postTemplate || null,
       channelUrl: form.channelUrl || null,
     };
 
@@ -206,9 +209,23 @@ export function ChannelForm({ cities, categories, editChannel }: ChannelFormProp
           </div>
 
           <div className="border-t border-border pt-3">
+            <label className="mb-1 block text-xs font-semibold text-muted-foreground">Шаблон поста (пусто = глобальный)</label>
+            <textarea
+              value={form.postTemplate}
+              onChange={(e) => set("postTemplate", e.target.value)}
+              placeholder={`<TYPE_EMOJI> <b><TYPE></b>\n━━━━━━━━━━━━━━━\n<b><NAME></b>\n\n<<DESCRIPTION>>\n\n📅 <DATE>\n📍 <PLACE>\n💰 <PRICE>\n\n🎟 <a href="<URL>"><BUTTON></a>\n\n<TAGS>`}
+              rows={6}
+              className={inputCls + " font-mono text-xs"}
+            />
+            <p className="mt-1 text-xs text-muted-foreground">
+              Переменные: {"<TYPE>"} {"<NAME>"} {"<DATE>"} {"<PLACE>"} {"<PRICE>"} {"<URL>"} {"<BUTTON>"} {"<TAGS>"} {"<CITY>"} {"<AGE>"} {"<DESCRIPTION>"} {"<<DESCRIPTION>>"} (AI)
+            </p>
+          </div>
+
+          <div className="border-t border-border pt-3">
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" checked={form.aiRephrase} onChange={(e) => set("aiRephrase", e.target.checked)} />
-              AI перефразирование (OpenRouter)
+              AI перефразирование (для {"<<DESCRIPTION>>"})
             </label>
             {form.aiRephrase && (
               <div className="mt-2 space-y-2">

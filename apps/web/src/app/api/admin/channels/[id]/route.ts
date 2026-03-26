@@ -33,6 +33,7 @@ export async function PATCH(
       ...(body.aiModel !== undefined && { aiModel: body.aiModel }),
       ...(body.aiPrompt !== undefined && { aiPrompt: body.aiPrompt }),
       ...(body.postIntervalMinutes !== undefined && { postIntervalMinutes: body.postIntervalMinutes }),
+      ...(body.postTemplate !== undefined && { postTemplate: body.postTemplate }),
     },
   });
 

@@ -1,6 +1,5 @@
-import type { Event, City, Category } from "db";
-import { prisma } from "../shared/db.js";
-import { rephraseText } from "../shared/ai.js";
+import { prisma } from "./db";
+import { rephraseText } from "./ai";
 
 const CATEGORY_EMOJI: Record<string, string> = {
   films: "🎬", concerts: "🎵", theatre: "🎭", exhibitions: "🖼",
@@ -37,9 +36,6 @@ function formatPrice(price: number | null, isAvailable: boolean): string {
   return `от ${price.toLocaleString("ru-RU")} ₽`;
 }
 
-/**
- * Get the global default template from Settings table.
- */
 async function getGlobalTemplate(): Promise<string> {
   try {
     const setting = await prisma.setting.findUnique({ where: { key: "post_template" } });
@@ -51,24 +47,37 @@ async function getGlobalTemplate(): Promise<string> {
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || "https://kudaafisha.ru";
 
-export async function formatTelegramPost(
-  event: Event & { city: City; category: Category },
-  channelId?: string,
-  channelTemplate?: string | null,
-  channelAiRephrase?: boolean,
-  channelAiPrompt?: string | null,
-  channelAiModel?: string | null,
-): Promise<{ text: string; imageUrl: string | null }> {
+interface EventData {
+  title: string;
+  description: string | null;
+  date: Date;
+  place: string | null;
+  price: unknown;
+  imageUrl: string | null;
+  isAvailable: boolean;
+  age: number | null;
+  slug: string;
+  city: { slug: string; name: string };
+  category: { slug: string; name: string };
+}
+
+interface ChannelData {
+  channelId: string;
+  postTemplate?: string | null;
+  aiRephrase?: boolean;
+  aiPrompt?: string | null;
+  aiModel?: string | null;
+}
+
+export async function renderPostFromTemplate(
+  event: EventData,
+  channel: ChannelData,
+): Promise<string> {
   const emoji = CATEGORY_EMOJI[event.category.slug] || "📌";
-  const utm = channelId
-    ? `?utm_source=telegram&utm_medium=channel&utm_campaign=${encodeURIComponent(channelId.replace("@", ""))}`
-    : "";
+  const utm = `?utm_source=telegram&utm_medium=channel&utm_campaign=${encodeURIComponent(channel.channelId.replace("@", ""))}`;
   const eventPageUrl = `${SITE_URL}/${event.city.slug}/${event.category.slug}/${event.slug}${utm}`;
 
-  const cleanPlace = event.place
-    ? event.place.split(/\s*&\s*/)[0].trim()
-    : null;
-
+  const cleanPlace = event.place ? event.place.split(/\s*&\s*/)[0].trim() : null;
   const placeLine = cleanPlace || `<a href="${eventPageUrl}">Узнать на сайте</a>`;
 
   const tags: string[] = [`#${event.category.name.replace(/[^а-яА-ЯёЁa-zA-Z0-9]/g, "")}`];
@@ -77,17 +86,15 @@ export async function formatTelegramPost(
     if (placeTag.length <= 30) tags.push(`#${placeTag}`);
   }
 
-  // Get template: channel-specific > global > default
-  const template = channelTemplate || await getGlobalTemplate();
+  const template = channel.postTemplate || await getGlobalTemplate();
 
-  // Build variables map
   const vars: Record<string, string> = {
     "<TYPE_EMOJI>": emoji,
     "<TYPE>": event.category.name,
     "<NAME>": event.title,
     "<DATE>": formatDate(event.date),
     "<PLACE>": placeLine,
-    "<PRICE>": formatPrice(Number(event.price), event.isAvailable),
+    "<PRICE>": formatPrice(event.price != null ? Number(event.price) : null, event.isAvailable),
     "<URL>": eventPageUrl,
     "<BUTTON>": event.isAvailable ? "Купить билет" : "Подробнее",
     "<TAGS>": tags.join(" "),
@@ -95,13 +102,13 @@ export async function formatTelegramPost(
     "<AGE>": event.age != null ? `${event.age}+` : "",
   };
 
-  // Process <<DESCRIPTION>> (with AI rephrase) and <DESCRIPTION> (plain)
   let text = template;
 
+  // <<DESCRIPTION>> = AI rephrase
   if (text.includes("<<DESCRIPTION>>")) {
-    if (channelAiRephrase && event.description) {
+    if (channel.aiRephrase && event.description) {
       const input = `Мероприятие: ${event.title}\nМесто: ${cleanPlace || "не указано"}\nКатегория: ${event.category.name}\n\nОписание:\n${event.description.substring(0, 1000)}`;
-      const rephrased = await rephraseText(input, channelAiPrompt, channelAiModel);
+      const rephrased = await rephraseText(input, channel.aiPrompt, channel.aiModel);
       const desc = (rephrased && !rephrased.startsWith(event.title))
         ? rephrased.substring(0, 500)
         : (event.description?.substring(0, 300) || "");
@@ -113,20 +120,14 @@ export async function formatTelegramPost(
     }
   }
 
+  // <DESCRIPTION> = plain
   if (text.includes("<DESCRIPTION>")) {
     text = text.replace("<DESCRIPTION>", event.description?.substring(0, 300) || "");
   }
 
-  // Replace all variables
   for (const [key, value] of Object.entries(vars)) {
     text = text.replaceAll(key, value);
   }
 
-  // Clean up empty lines (more than 2 consecutive)
-  text = text.replace(/\n{3,}/g, "\n\n").trim();
-
-  return {
-    text,
-    imageUrl: event.imageUrl || null,
-  };
+  return text.replace(/\n{3,}/g, "\n\n").trim();
 }
