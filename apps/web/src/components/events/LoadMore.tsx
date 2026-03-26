@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { EventCard } from "./EventCard";
 
 interface Event {
@@ -30,6 +31,7 @@ export function LoadMore({
   initialTotal,
   initialLoaded,
 }: LoadMoreProps) {
+  const searchParams = useSearchParams();
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(initialLoaded >= initialTotal);
@@ -37,11 +39,13 @@ export function LoadMore({
   const loadingRef = useRef(false);
   const observerRef = useRef<HTMLDivElement>(null);
 
+  // Reset when filters change
+  const filterKey = searchParams.toString();
   useEffect(() => {
     setEvents([]);
     setDone(initialLoaded >= initialTotal);
     pageRef.current = 2;
-  }, [citySlug, categorySlug, initialTotal, initialLoaded]);
+  }, [filterKey, citySlug, categorySlug, initialTotal, initialLoaded]);
 
   useEffect(() => {
     if (done || !observerRef.current) return;
@@ -58,6 +62,14 @@ export function LoadMore({
             limit: "24",
           });
           if (categorySlug) params.set("category", categorySlug);
+
+          // Pass through active filters from URL
+          const free = searchParams.get("free");
+          const kids = searchParams.get("kids");
+          const age = searchParams.get("age");
+          if (free) params.set("free", free);
+          if (kids) params.set("kids", kids);
+          if (age) params.set("age", age);
 
           fetch(`/api/events?${params}`)
             .then((r) => r.json())
@@ -84,7 +96,7 @@ export function LoadMore({
     const el = observerRef.current;
     observer.observe(el);
     return () => observer.disconnect();
-  }, [done, citySlug, categorySlug]);
+  }, [done, citySlug, categorySlug, filterKey]);
 
   if (done && events.length === 0) return null;
 

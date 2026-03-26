@@ -36,6 +36,20 @@ export async function GET(request: NextRequest) {
     where.title = { contains: search, mode: "insensitive" };
   }
 
+  // Extra filters
+  const free = searchParams.get("free");
+  const kids = searchParams.get("kids");
+  const age = searchParams.get("age");
+  const andConditions: unknown[] = [];
+
+  if (free === "1") {
+    where.isAvailable = true;
+    andConditions.push({ OR: [{ price: { equals: 0 } }, { price: null }] });
+  }
+  if (kids === "1") where.isKids = true;
+  if (age) andConditions.push({ OR: [{ age: { lte: parseInt(age) } }, { age: null }] });
+  if (andConditions.length > 0) where.AND = andConditions;
+
   const [events, total] = await Promise.all([
     prisma.event.findMany({
       where,
