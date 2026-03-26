@@ -5,6 +5,7 @@ import { config } from "./shared/config.js";
 import { prisma } from "./shared/db.js";
 import { runXmlImport } from "./xml-importer/scheduler.js";
 import { runTelegramPosting } from "./telegram/scheduler.js";
+import { startBotPolling } from "./telegram/bot-polling.js";
 
 async function deactivatePastEvents() {
   const result = await prisma.event.updateMany({
@@ -52,6 +53,9 @@ async function main() {
       );
     });
     logger.info(`Telegram posting scheduled: ${config.telegram.cronSchedule}`);
+
+    // Start bot polling for auto-channel detection
+    startBotPolling().catch((e) => logger.error(e, "Bot polling failed"));
   } else {
     logger.warn("TELEGRAM_BOT_TOKEN not set, Telegram posting disabled");
   }
