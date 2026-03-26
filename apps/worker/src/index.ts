@@ -70,7 +70,4 @@ async function main() {
   logger.info(`Past events cleanup scheduled: ${config.cleanup.cronSchedule}`);
 
   logger.info("Worker is running. Press Ctrl+C to stop.");
-
-  // Notify admin that worker started
-  await notifyAdmin("🟢 Worker запущен\n\nCron: импорт, постинг, очистка\nBot polling: активен");
 }
