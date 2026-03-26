@@ -67,7 +67,10 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
     date: dateRange || { gte: new Date() },
   };
   const andConditions: unknown[] = [];
-  if (free === "1") andConditions.push({ OR: [{ price: { equals: 0 } }, { price: null }] });
+  if (free === "1") {
+    where.isAvailable = true;
+    andConditions.push({ OR: [{ price: { equals: 0 } }, { price: null }] });
+  }
   if (kids === "1") where.isKids = true;
   if (age) andConditions.push({ OR: [{ age: { lte: parseInt(age) } }, { age: null }] });
   if (andConditions.length > 0) where.AND = andConditions;
