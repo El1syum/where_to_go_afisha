@@ -1,46 +1,58 @@
 import { Bot } from "grammy";
 import { prisma } from "../shared/db.js";
 import { logger } from "../shared/logger.js";
+import { notifyAdmin } from "./notify.js";
 
-// Map of common city keywords in channel names to city slugs
-const CITY_KEYWORDS: Record<string, string> = {
-  moscow: "moscow", msk: "moscow", москва: "moscow", мск: "moscow",
-  spb: "saint-petersburg", piter: "saint-petersburg", питер: "saint-petersburg", "санкт-петербург": "saint-petersburg", "петербург": "saint-petersburg",
-  ekb: "yekaterinburg", екб: "yekaterinburg", екатеринбург: "yekaterinburg",
-  nsk: "novosibirsk", новосибирск: "novosibirsk",
-  kazan: "kazan", казань: "kazan",
-  krasnoyarsk: "krasnoyarsk", красноярск: "krasnoyarsk",
-  nn: "nizhny-novgorod", "нижний": "nizhny-novgorod",
-  perm: "perm", пермь: "perm",
-  rostov: "rostov-na-donu", ростов: "rostov-na-donu", rnd: "rostov-na-donu",
-  krasnodar: "krasnodar", краснодар: "krasnodar",
-  samara: "samara", самара: "samara",
-  voronezh: "voronezh", воронеж: "voronezh",
-  ufa: "ufa", уфа: "ufa",
-  volgograd: "volgograd", волгоград: "volgograd",
-  chelyabinsk: "chelyabinsk", челябинск: "chelyabinsk",
-  omsk: "omsk", омск: "omsk",
-  tyumen: "tyumen", тюмень: "tyumen",
-  kaliningrad: "kaliningrad", калининград: "kaliningrad",
-  yaroslavl: "yaroslavl", ярославль: "yaroslavl",
-  sochi: "sochi", сочи: "sochi",
-  tula: "tula", тула: "tula",
-  irkutsk: "irkutsk", иркутск: "irkutsk",
-  tomsk: "tomsk", томск: "tomsk",
-  vladivostok: "vladivostok", владивосток: "vladivostok",
-  saratov: "saratov", саратов: "saratov",
-  khabarovsk: "khabarovsk", хабаровск: "khabarovsk",
-  tver: "tver", тверь: "tver",
-  barnaul: "barnaul", барнаул: "barnaul",
-  ryazan: "ryazan", рязань: "ryazan",
-  izhevsk: "izhevsk", ижевск: "izhevsk",
-};
+/**
+ * Detect city from channel username or title by matching against all cities in DB.
+ * Checks: slug match, Russian name match, transliterated name match.
+ */
+async function detectCity(text: string): Promise<{ id: number; slug: string; name: string } | null> {
+  if (!text) return null;
 
-function detectCitySlug(text: string): string | null {
-  const lower = text.toLowerCase().replace(/[_\-]/g, " ");
-  for (const [keyword, slug] of Object.entries(CITY_KEYWORDS)) {
-    if (lower.includes(keyword)) return slug;
+  const lower = text.toLowerCase().replace(/[_\-\.]/g, " ").trim();
+
+  // Load all cities from DB
+  const cities = await prisma.city.findMany({
+    where: { isActive: true },
+    select: { id: true, slug: true, name: true },
+  });
+
+  // Common abbreviations
+  const ABBR: Record<string, string> = {
+    msk: "moscow", мск: "moscow",
+    spb: "saint-petersburg", питер: "saint-petersburg", "спб": "saint-petersburg",
+    ekb: "yekaterinburg", екб: "yekaterinburg",
+    nsk: "novosibirsk", нск: "novosibirsk",
+    rnd: "rostov-na-donu", ростов: "rostov-na-donu",
+    nn: "nizhny-novgorod",
+    kzn: "kazan",
+    krsk: "krasnoyarsk",
+    nsk: "novosibirsk",
+  };
+
+  // Check abbreviations first
+  for (const [abbr, slug] of Object.entries(ABBR)) {
+    if (lower.includes(abbr)) {
+      const city = cities.find((c) => c.slug === slug);
+      if (city) return city;
+    }
   }
+
+  // Check slug match (e.g. "moscow_kudaafisha" contains "moscow")
+  for (const city of cities) {
+    if (lower.includes(city.slug.replace(/-/g, " ")) || lower.includes(city.slug.replace(/-/g, ""))) {
+      return city;
+    }
+  }
+
+  // Check Russian name match (e.g. "Афиша Москва" contains "Москва")
+  for (const city of cities) {
+    if (lower.includes(city.name.toLowerCase())) {
+      return city;
+    }
+  }
+
   return null;
 }
 
@@ -53,87 +65,81 @@ export function setupAutoChannel(bot: Bot) {
     // Only handle when bot is added as admin to a channel
     if (chat.type !== "channel") return;
     if (newStatus !== "administrator") return;
-    if (oldStatus === "administrator") return; // already was admin
+    if (oldStatus === "administrator") return;
 
-    const channelId = `@${chat.username}` || String(chat.id);
-    const channelTitle = chat.title || "";
     const channelUsername = chat.username || "";
+    const channelTitle = chat.title || "";
+    const chatId = String(chat.id);
 
-    logger.info({ channelId, channelTitle, channelUsername }, "Bot added to channel");
-
-    // Try to detect city from channel username or title
-    const citySlug = detectCitySlug(channelUsername) || detectCitySlug(channelTitle);
-
-    let cityId: number | null = null;
-    let cityName = "";
-
-    if (citySlug) {
-      const city = await prisma.city.findUnique({
-        where: { slug: citySlug },
-        select: { id: true, name: true },
-      });
-      if (city) {
-        cityId = city.id;
-        cityName = city.name;
-      }
-    }
-
-    if (!cityId) {
-      logger.warn({ channelId, channelTitle }, "Could not detect city, channel created but auto-posting disabled");
-    }
+    logger.info({ chatId, channelUsername, channelTitle }, "Bot added to channel");
 
     // Check if channel already exists
+    const existingId = channelUsername ? `@${channelUsername}` : chatId;
     const existing = await prisma.channel.findFirst({
-      where: {
-        channelId: channelUsername ? `@${channelUsername}` : String(chat.id),
-      },
+      where: { channelId: existingId },
     });
 
     if (existing) {
-      logger.info({ channelId: existing.channelId }, "Channel already exists in DB");
+      logger.info({ channelId: existingId }, "Channel already exists in DB");
+      await notifyAdmin(`ℹ️ Бот добавлен в канал, но он уже есть в БД\n\nКанал: ${channelTitle}\nID: ${existingId}`);
       return;
     }
 
-    // Create channel with default settings
+    // Try to detect city from username, then title
+    const city = await detectCity(channelUsername) || await detectCity(channelTitle);
+
+    // Create channel
     const channel = await prisma.channel.create({
       data: {
-        cityId: cityId || 1, // fallback to first city
+        cityId: city?.id || 1,
         platform: "TELEGRAM",
         name: channelTitle || channelUsername || "Новый канал",
-        description: cityName ? `Автопостинг: ${cityName}` : "Город не определён",
-        channelId: channelUsername ? `@${channelUsername}` : String(chat.id),
+        description: city ? `Автопостинг: ${city.name}` : "Город не определён",
+        channelId: channelUsername ? `@${channelUsername}` : chatId,
         channelUrl: channelUsername ? `https://t.me/${channelUsername}` : null,
-        isActive: !!cityId, // auto-posting only if city detected
-        categories: JSON.stringify(["concerts", "theatre"]), // concerts + theatre by default
+        isActive: !!city, // auto-posting only if city detected
+        categories: JSON.stringify(["concerts", "theatre"]),
         publishHourFrom: 9,
         publishHourTo: 22,
         maxPostsPerDay: 4,
-        postIntervalMinutes: 120, // every 2 hours
+        postIntervalMinutes: 120,
         aiRephrase: false,
       },
     });
 
-    logger.info(
-      {
-        channelId: channel.channelId,
-        city: cityName || "not detected",
-        isActive: channel.isActive,
-      },
-      "Channel auto-created"
-    );
+    // Notify admin
+    if (city) {
+      await notifyAdmin(
+        `✅ Новый канал подключён!\n\n` +
+        `Канал: ${channelTitle}\n` +
+        `ID: ${channel.channelId}\n` +
+        `Город: ${city.name}\n` +
+        `Автопостинг: ВКЛ\n` +
+        `Категории: Концерты, Театр\n` +
+        `Постов/день: 4`
+      );
+    } else {
+      await notifyAdmin(
+        `⚠️ Новый канал, город НЕ определён\n\n` +
+        `Канал: ${channelTitle}\n` +
+        `ID: ${channel.channelId}\n` +
+        `Автопостинг: ВЫКЛ\n\n` +
+        `Настройте вручную: /admin/channels`
+      );
+    }
 
     // Send welcome message to the channel
     try {
-      const statusText = cityId
-        ? `Канал привязан к городу: ${cityName}\nАвтопостинг: включён (концерты, театр, 4 поста/день)`
-        : `Город не определён автоматически.\nНастройте канал в админке: ${process.env.SITE_URL || "https://kudaafisha.ru"}/admin/channels`;
+      const siteUrl = process.env.SITE_URL || process.env.NEXT_PUBLIC_SITE_URL || "https://kudaafisha.ru";
+      const statusText = city
+        ? `✅ Канал привязан к городу: ${city.name}\n📋 Автопостинг: концерты, театр — 4 поста/день`
+        : `⚠️ Город не определён автоматически.\n🔧 Настройте в админке: ${siteUrl}/admin/channels`;
 
-      await ctx.api.sendMessage(
-        chat.id,
-        `👋 Бот подключён!\n\n${statusText}\n\n🔧 Управление: ${process.env.SITE_URL || "https://kudaafisha.ru"}/admin/channels`,
-      );
+      await ctx.api.sendMessage(chat.id, `👋 Бот подключён!\n\n${statusText}`);
     } catch (err) {
       logger.warn({ err }, "Could not send welcome message");
     }
+
+    logger.info({ channelId: channel.channelId, city: city?.name || "unknown", isActive: channel.isActive }, "Channel auto-created");
   });
 }

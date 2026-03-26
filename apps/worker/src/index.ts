@@ -6,6 +6,7 @@ import { prisma } from "./shared/db.js";
 import { runXmlImport } from "./xml-importer/scheduler.js";
 import { runTelegramPosting } from "./telegram/scheduler.js";
 import { startBotPolling } from "./telegram/bot-polling.js";
+import { notifyAdmin } from "./telegram/notify.js";
 
 async function deactivatePastEvents() {
   const result = await prisma.event.updateMany({
@@ -69,4 +70,7 @@ async function main() {
   logger.info(`Past events cleanup scheduled: ${config.cleanup.cronSchedule}`);
 
   logger.info("Worker is running. Press Ctrl+C to stop.");
+
+  // Notify admin that worker started
+  await notifyAdmin("🟢 Worker запущен\n\nCron: импорт, постинг, очистка\nBot polling: активен");
 }
