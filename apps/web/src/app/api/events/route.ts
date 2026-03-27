@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
     andConditions.push({ OR: [{ price: { equals: 0 } }, { price: null }] });
   }
   if (kids === "1") where.isKids = true;
-  if (age) andConditions.push({ OR: [{ age: { lte: parseInt(age) } }, { age: null }] });
+  if (age) where.age = parseInt(age);
   if (andConditions.length > 0) where.AND = andConditions;
 
   const [events, total] = await Promise.all([
