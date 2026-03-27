@@ -8,50 +8,53 @@ concurrency:
   group: deploy
   cancel-in-progress: true
 
-env:
-  REGISTRY: ghcr.io
-  IMAGE_WEB: ghcr.io/el1syum/where_to_go_afisha/web
-  IMAGE_WORKER: ghcr.io/el1syum/where_to_go_afisha/worker
-
 jobs:
-  build-and-push:
+  build-web:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
     steps:
       - uses: actions/checkout@v4
-
       - uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
       - uses: docker/setup-buildx-action@v3
-
-      - name: Build & push web image
-        uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@v6
         with:
           context: .
           file: apps/web/Dockerfile
           push: true
-          tags: ${{ env.IMAGE_WEB }}:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          tags: ghcr.io/el1syum/where_to_go_afisha/web:latest
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,scope=web,mode=max
 
-      - name: Build & push worker image
-        uses: docker/build-push-action@v6
+  build-worker:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
         with:
           context: .
           file: apps/worker/Dockerfile
           push: true
-          tags: ${{ env.IMAGE_WORKER }}:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          tags: ghcr.io/el1syum/where_to_go_afisha/worker:latest
+          cache-from: type=gha,scope=worker
+          cache-to: type=gha,scope=worker,mode=max
 
   deploy:
-    needs: build-and-push
+    needs: [build-web, build-worker]
     runs-on: ubuntu-latest
     steps:
       - name: Deploy to VPS
@@ -65,17 +68,12 @@ jobs:
             git checkout -- docker-compose.prod.yml
             git pull origin main
 
-            # Fix SSL volume paths for this host
             sed -i 's|certbot_data:/etc/letsencrypt|/etc/letsencrypt:/etc/letsencrypt|' docker-compose.prod.yml
             sed -i 's|certbot_www:/var/www/certbot|/var/www/certbot:/var/www/certbot|' docker-compose.prod.yml
 
-            # Pull pre-built images (public packages, no login needed)
             docker pull ghcr.io/el1syum/where_to_go_afisha/web:latest
             docker pull ghcr.io/el1syum/where_to_go_afisha/worker:latest
 
-            # Restart with new images
             docker compose -f docker-compose.prod.yml up -d --force-recreate --no-build
-
-            # Clean up old images to save disk space
             docker image prune -af
             echo "Deploy complete!"
