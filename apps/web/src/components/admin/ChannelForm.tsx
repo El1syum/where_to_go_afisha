@@ -50,7 +50,7 @@ export function ChannelForm({ cities, categories, editChannel }: ChannelFormProp
     publishHourTo: editChannel?.publishHourTo ?? 22,
     maxPostsPerDay: editChannel?.maxPostsPerDay ?? 10,
     postIntervalMinutes: editChannel?.postIntervalMinutes ?? 30,
-    postTemplate: editChannel?.postTemplate || "",
+    postTemplate: editChannel?.postTemplate || `<TYPE_EMOJI> <b><TYPE></b>\n━━━━━━━━━━━━━━━\n<b><NAME></b>\n\n<<DESCRIPTION>>\n\n📅 <DATE>\n📍 <PLACE>\n💰 <PRICE>\n\n🎟 <a href="<URL>"><BUTTON></a>\n\n<TAGS>`,
     aiRephrase: editChannel?.aiRephrase || false,
     aiModel: editChannel?.aiModel || "",
     aiPrompt: editChannel?.aiPrompt || "",
@@ -213,8 +213,7 @@ export function ChannelForm({ cities, categories, editChannel }: ChannelFormProp
             <textarea
               value={form.postTemplate}
               onChange={(e) => set("postTemplate", e.target.value)}
-              placeholder={`<TYPE_EMOJI> <b><TYPE></b>\n━━━━━━━━━━━━━━━\n<b><NAME></b>\n\n<<DESCRIPTION>>\n\n📅 <DATE>\n📍 <PLACE>\n💰 <PRICE>\n\n🎟 <a href="<URL>"><BUTTON></a>\n\n<TAGS>`}
-              rows={6}
+              rows={10}
               className={inputCls + " font-mono text-xs"}
             />
             <p className="mt-1 text-xs text-muted-foreground">
