@@ -209,7 +209,8 @@ export default async function EventPage({ params }: EventPageProps) {
 
         {/* Sidebar */}
         <div className="lg:col-span-1">
-          <div className="sticky top-20 rounded-xl border border-border bg-card p-6">
+          <div className="sticky top-20 space-y-4">
+          <div className="rounded-xl border border-border bg-card p-6">
             <div className="mb-4 space-y-3">
               <div className="flex items-start gap-3">
                 <span className="text-lg">📅</span>
@@ -270,6 +271,7 @@ export default async function EventPage({ params }: EventPageProps) {
               publishedChannelIds={publishedPosts.map((p) => p.channelDbId).filter(Boolean) as number[]}
             />
           )}
+          </div>
         </div>
       </div>
 
