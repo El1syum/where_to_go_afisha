@@ -7,6 +7,7 @@ import { EventGrid } from "@/components/events/EventGrid";
 import { DateFilter } from "@/components/filters/DateFilter";
 import { JsonLd, breadcrumbJsonLd } from "@/components/seo/JsonLd";
 import { CitySocials } from "@/components/layout/CitySocials";
+import { Collections } from "@/components/events/Collections";
 export const revalidate = 3600;
 
 interface CityPageProps {
@@ -94,6 +95,10 @@ export default async function CityPage({ params, searchParams }: CityPageProps) 
 
       <Suspense fallback={<div className="mb-6 h-10" />}>
         <DateFilter />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <Collections cityId={city.id} citySlug={citySlug} />
       </Suspense>
 
       <EventGrid events={events} citySlug={citySlug} total={total} />

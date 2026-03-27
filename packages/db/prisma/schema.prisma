@@ -86,6 +86,7 @@ model Event {
   city            City         @relation(fields: [cityId], references: [id])
   category        Category     @relation(fields: [categoryId], references: [id])
   telegramPosts   TelegramPost[]
+  reviews         Review[]
 
   @@unique([externalId, source])
   @@index([slug])
@@ -235,4 +236,21 @@ enum UserRole {
   ADMIN
   MODERATOR
   USER
+}
+
+// =====================
+// ОТЗЫВЫ
+// =====================
+model Review {
+  id         Int      @id @default(autoincrement())
+  eventId    Int
+  author     String
+  rating     Int      // 1-5
+  text       String   @db.Text
+  isApproved Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  event      Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId, isApproved])
 }
