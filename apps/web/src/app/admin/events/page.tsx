@@ -77,6 +77,7 @@ export default async function AdminEventsPage({ searchParams }: Props) {
     <AdminShell>
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold">Мероприятия ({total})</h1>
+        <Link href="/admin/events/create" className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">+ Добавить</Link>
       </div>
 
       {/* Filters */}
