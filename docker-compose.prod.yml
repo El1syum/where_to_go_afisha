@@ -41,6 +41,9 @@ services:
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       SITE_URL: ${SITE_URL}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      IMAGES_DIR: /app/images
+    volumes:
+      - /opt/afisha/images:/app/images
     ports:
       - "127.0.0.1:3000:3000"
     depends_on:
