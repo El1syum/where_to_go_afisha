@@ -102,7 +102,7 @@ export async function postNewEvents(): Promise<number> {
         category: true,
       },
       orderBy: { date: "asc" },
-      take: Math.min(config.telegram.maxPostsPerRun, channel.maxPostsPerDay - postedToday),
+      take: 1, // Only 1 post per cron run per channel — interval enforced by cron frequency
     });
 
     for (const event of events) {
