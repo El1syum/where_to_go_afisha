@@ -101,8 +101,12 @@ export async function postNewEvents(): Promise<number> {
         city: true,
         category: true,
       },
-      orderBy: { date: "asc" },
-      take: 1, // Only 1 post per cron run per channel — interval enforced by cron frequency
+      orderBy: [
+        { createdAt: "desc" },  // New events first (freshly imported)
+        { price: "desc" },      // Then by price descending (expensive first)
+        { date: "asc" },        // Then by nearest date
+      ],
+      take: 1,
     });
 
     for (const event of events) {
