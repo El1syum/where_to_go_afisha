@@ -12,7 +12,7 @@ interface CollectionEvent {
 }
 
 function MiniCard({ event, citySlug }: { event: CollectionEvent; citySlug: string }) {
-  const isKassir = event.imageUrl?.includes("kassir.ru") ?? false;
+  const isKassir = (event.imageUrl?.includes("kassir.ru") || event.slug.includes("-k-")) ?? false;
 
   return (
     <Link
