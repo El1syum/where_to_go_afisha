@@ -147,7 +147,7 @@ export default async function EventPage({ params }: EventPageProps) {
         {/* Main content */}
         <div className="lg:col-span-2">
           {event.imageUrl && (() => {
-            const isKassir = event.imageUrl.includes("kassir.ru");
+            const isKassir = event.imageUrl.includes("kassir.ru") || event.slug.includes("-k-");
             return (
             <div className="relative z-0 mb-6 aspect-[16/9] overflow-hidden rounded-xl">
               <Image

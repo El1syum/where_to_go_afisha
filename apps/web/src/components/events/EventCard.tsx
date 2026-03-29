@@ -27,7 +27,7 @@ export function EventCard({ event, citySlug }: EventCardProps) {
     >
       <div className="relative z-0 aspect-[4/3] overflow-hidden bg-secondary">
         {event.imageUrl ? (() => {
-          const isKassir = event.imageUrl!.includes("kassir.ru");
+          const isKassir = event.imageUrl!.includes("kassir.ru") || event.slug.includes("-k-");
           return (
             <Image
               src={event.imageUrl}
