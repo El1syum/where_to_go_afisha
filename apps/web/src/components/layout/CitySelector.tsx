@@ -45,17 +45,17 @@ export function CitySelector({ cities, currentSlug, onClose }: CitySelectorProps
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 pt-20" onClick={onClose}>
       <div
-        className="mx-4 max-h-[70vh] w-full max-w-2xl overflow-hidden rounded-2xl bg-background shadow-xl"
+        className="mx-4 max-h-[70vh] w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="border-b border-border p-4">
-          <h2 className="mb-3 text-lg font-semibold">Выберите город</h2>
+        <div className="border-b border-gray-100 p-4">
+          <h2 className="mb-3 text-lg font-semibold text-gray-900">Выберите город</h2>
           <input
             type="text"
             placeholder="Поиск города..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg border border-border bg-secondary px-4 py-2 text-sm outline-none focus:border-primary"
+            className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
             autoFocus
           />
         </div>
@@ -63,14 +63,14 @@ export function CitySelector({ cities, currentSlug, onClose }: CitySelectorProps
         <div className="overflow-y-auto p-4" style={{ maxHeight: "50vh" }}>
           {grouped.map(([letter, letterCities]) => (
             <div key={letter} className="mb-4">
-              <div className="mb-2 text-sm font-semibold text-muted-foreground">{letter}</div>
+              <div className="mb-2 text-sm font-semibold text-gray-400">{letter}</div>
               <div className="grid grid-cols-2 gap-1 sm:grid-cols-3">
                 {letterCities.map((city) => (
                   <button
                     key={city.slug}
                     onClick={() => selectCity(city.slug)}
-                    className={`rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-secondary ${
-                      city.slug === currentSlug ? "bg-primary/10 font-medium text-primary" : ""
+                    className={`rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-gray-100 ${
+                      city.slug === currentSlug ? "bg-indigo-50 font-medium text-indigo-600" : "text-gray-700"
                     }`}
                   >
                     {city.name}
@@ -81,7 +81,7 @@ export function CitySelector({ cities, currentSlug, onClose }: CitySelectorProps
           ))}
 
           {grouped.length === 0 && (
-            <p className="py-8 text-center text-muted-foreground">Город не найден</p>
+            <p className="py-8 text-center text-gray-500">Город не найден</p>
           )}
         </div>
       </div>

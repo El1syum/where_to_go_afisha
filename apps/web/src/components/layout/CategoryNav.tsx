@@ -40,15 +40,15 @@ export function CategoryNav({ categories }: CategoryNavProps) {
   }
 
   return (
-    <nav className="border-b border-border">
-      <div className="relative mx-auto max-w-7xl px-4">
+    <nav className="bg-white shadow-sm">
+      <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
         {/* Left fade + arrow */}
         {showLeft && (
           <button
             onClick={() => scroll(-1)}
-            className="absolute left-0 top-0 z-10 flex h-full w-10 items-center justify-start bg-gradient-to-r from-background via-background/80 to-transparent pl-1"
+            className="absolute left-0 top-0 z-10 flex h-full w-10 items-center justify-start bg-gradient-to-r from-white via-white/80 to-transparent pl-1"
           >
-            <svg className="h-5 w-5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
           </button>
@@ -57,14 +57,14 @@ export function CategoryNav({ categories }: CategoryNavProps) {
         <div
           ref={scrollRef}
           onScroll={checkScroll}
-          className="-mb-px flex gap-1 overflow-x-auto py-2 scrollbar-hide"
+          className="flex gap-2 overflow-x-auto py-3 scrollbar-hide"
         >
           <Link
             href={`/${citySlug}`}
-            className={`shrink-0 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+            className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
               !activeCategory
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                ? "bg-indigo-500 text-white shadow-sm"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
           >
             Все
@@ -73,13 +73,13 @@ export function CategoryNav({ categories }: CategoryNavProps) {
             <Link
               key={cat.slug}
               href={`/${citySlug}/${cat.slug}`}
-              className={`shrink-0 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+              className={`flex shrink-0 items-center gap-1 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
                 activeCategory === cat.slug
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  ? "bg-indigo-500 text-white shadow-sm"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
               }`}
             >
-              {cat.icon && <span className="mr-1">{cat.icon}</span>}
+              {cat.icon && <span>{cat.icon}</span>}
               {cat.name}
             </Link>
           ))}
@@ -89,9 +89,9 @@ export function CategoryNav({ categories }: CategoryNavProps) {
         {showRight && (
           <button
             onClick={() => scroll(1)}
-            className="absolute right-0 top-0 z-10 flex h-full w-10 items-center justify-end bg-gradient-to-l from-background via-background/80 to-transparent pr-1"
+            className="absolute right-0 top-0 z-10 flex h-full w-10 items-center justify-end bg-gradient-to-l from-white via-white/80 to-transparent pr-1"
           >
-            <svg className="h-5 w-5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
             </svg>
           </button>

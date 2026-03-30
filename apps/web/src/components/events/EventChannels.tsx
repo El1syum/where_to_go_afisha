@@ -25,8 +25,8 @@ export async function EventChannels({ eventId, channels, publishedChannelIds }: 
   const admin = await getAdmin();
 
   return (
-    <div className="mt-4 rounded-xl border border-border bg-card p-5">
-      <h3 className="mb-3 text-sm font-semibold">Следи за мероприятием на каналах:</h3>
+    <div className="mt-4 rounded-2xl bg-white p-5 shadow-sm">
+      <h3 className="mb-3 text-sm font-semibold text-gray-900">Следи за мероприятием на каналах:</h3>
       <div className="space-y-2">
         {channels.map((ch) => {
           const cfg = PLATFORM_CONFIG[ch.platform] || { label: ch.platform, icon: "📌" };
@@ -36,13 +36,13 @@ export async function EventChannels({ eventId, channels, publishedChannelIds }: 
             <div key={ch.id} className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-sm">
                 <span>{cfg.icon}</span>
-                <span className="text-muted-foreground">{cfg.label} —</span>
+                <span className="text-gray-500">{cfg.label} —</span>
                 {ch.channelUrl ? (
                   <a
                     href={ch.channelUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-medium text-primary hover:underline"
+                    className="font-medium text-indigo-600 hover:underline"
                   >
                     {ch.name}
                   </a>

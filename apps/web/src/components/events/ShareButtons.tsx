@@ -40,8 +40,8 @@ export function ShareButtons({ title, url }: ShareButtonsProps) {
   }
 
   return (
-    <div className="mt-6 border-t border-border pt-6">
-      <h3 className="mb-3 text-sm font-semibold text-muted-foreground">Поделиться</h3>
+    <div className="mt-6 border-t border-gray-100 pt-6">
+      <h3 className="mb-3 text-sm font-semibold text-gray-500">Поделиться</h3>
       <div className="flex flex-wrap gap-2">
         {links.map((link) => (
           <a
@@ -49,7 +49,7 @@ export function ShareButtons({ title, url }: ShareButtonsProps) {
             href={link.href}
             target="_blank"
             rel="noopener noreferrer"
-            className={`inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm transition-colors ${link.color}`}
+            className={`inline-flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 text-sm transition-colors ${link.color}`}
           >
             <span>{link.icon}</span>
             {link.name}
@@ -58,13 +58,13 @@ export function ShareButtons({ title, url }: ShareButtonsProps) {
         <div className="relative">
           <button
             onClick={copyLink}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm transition-colors hover:bg-secondary"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 text-sm transition-colors hover:bg-gray-50"
           >
             <span>🔗</span>
             Копировать
           </button>
           {copied && (
-            <div className="absolute bottom-full left-1/2 mb-2 -translate-x-1/2 animate-fade-in rounded-lg bg-foreground px-3 py-1.5 text-xs font-medium text-background shadow-lg">
+            <div className="absolute bottom-full left-1/2 mb-2 -translate-x-1/2 animate-fade-in rounded-lg bg-gray-900 px-3 py-1.5 text-xs font-medium text-white shadow-lg">
               Ссылка скопирована
             </div>
           )}

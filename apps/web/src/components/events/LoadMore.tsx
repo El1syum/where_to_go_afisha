@@ -109,8 +109,8 @@ export function LoadMore({
       {!done && (
         <div ref={observerRef} className="col-span-full flex justify-center py-8">
           {loading && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
               Загрузка...
             </div>
           )}

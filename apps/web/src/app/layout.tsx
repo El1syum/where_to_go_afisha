@@ -38,7 +38,7 @@ export default function RootLayout({
           </div>
         </noscript>
       </head>
-      <body className="min-h-screen bg-background text-foreground antialiased">
+      <body className="min-h-screen bg-[#f3f4f6] text-foreground antialiased">
         {children}
       </body>
     </html>

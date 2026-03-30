@@ -78,14 +78,14 @@ export default async function SearchPage({ params, searchParams }: SearchPagePro
         ])}
       />
 
-      <h1 className="mb-6 text-2xl font-bold md:text-3xl">
+      <h1 className="mb-6 text-2xl font-bold text-gray-900 md:text-3xl">
         {query
           ? `Результаты поиска: "${query}"`
           : `Поиск мероприятий в ${cityIn}`}
       </h1>
 
       {query && events.length > 0 && (
-        <p className="mb-4 text-sm text-muted-foreground">
+        <p className="mb-4 text-sm text-gray-500">
           Найдено мероприятий: {events.length}
         </p>
       )}
@@ -94,7 +94,7 @@ export default async function SearchPage({ params, searchParams }: SearchPagePro
         <EventGrid events={events} citySlug={citySlug} />
       ) : (
         <div className="py-16 text-center">
-          <p className="text-lg text-muted-foreground">
+          <p className="text-lg text-gray-500">
             Введите запрос для поиска мероприятий
           </p>
         </div>

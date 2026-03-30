@@ -24,7 +24,7 @@ export function EventGrid({ events, citySlug, categorySlug, total }: EventGridPr
   if (events.length === 0) {
     return (
       <div className="py-16 text-center">
-        <p className="text-lg text-muted-foreground">Мероприятий не найдено</p>
+        <p className="text-lg text-gray-500">Мероприятий не найдено</p>
       </div>
     );
   }
@@ -32,7 +32,7 @@ export function EventGrid({ events, citySlug, categorySlug, total }: EventGridPr
   const totalCount = total ?? events.length;
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {events.map((event) => (
         <EventCard key={event.slug} event={event} citySlug={citySlug} />
       ))}

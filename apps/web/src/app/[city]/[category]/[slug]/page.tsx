@@ -135,12 +135,12 @@ export default async function EventPage({ params }: EventPageProps) {
       ])} />
 
       {/* Breadcrumbs */}
-      <nav className="mb-4 text-sm text-muted-foreground">
-        <a href={`/${citySlug}`} className="hover:text-primary">{event.city.name}</a>
+      <nav className="mb-4 text-sm text-gray-500">
+        <a href={`/${citySlug}`} className="hover:text-indigo-600">{event.city.name}</a>
         {" / "}
-        <a href={`/${citySlug}/${categorySlug}`} className="hover:text-primary">{event.category.name}</a>
+        <a href={`/${citySlug}/${categorySlug}`} className="hover:text-indigo-600">{event.category.name}</a>
         {" / "}
-        <span className="text-foreground">{event.title}</span>
+        <span className="text-gray-900">{event.title}</span>
       </nav>
 
       <div className="grid gap-8 lg:grid-cols-3">
@@ -149,7 +149,7 @@ export default async function EventPage({ params }: EventPageProps) {
           {event.imageUrl && (() => {
             const isKassir = event.imageUrl.includes("kassir.ru") || event.slug.includes("-k-");
             return (
-            <div className="relative z-0 mb-6 aspect-[16/9] overflow-hidden rounded-xl">
+            <div className="relative z-0 mb-6 aspect-[16/9] overflow-hidden rounded-2xl">
               <Image
                 src={event.imageUrl}
                 alt={event.title}
@@ -184,7 +184,7 @@ export default async function EventPage({ params }: EventPageProps) {
           {event.place && (
             <div className="mt-8">
               <h2 className="mb-3 text-lg font-semibold">На карте</h2>
-              <div className="overflow-hidden rounded-xl border border-border">
+              <div className="overflow-hidden rounded-2xl border border-gray-200">
                 <iframe
                   src={`https://yandex.ru/map-widget/v1/?text=${encodeURIComponent(event.place + ", " + event.city.name)}&z=16&l=map&pt=${encodeURIComponent(event.place + ", " + event.city.name)}~pm2rdm`}
                   width="100%"
@@ -210,7 +210,7 @@ export default async function EventPage({ params }: EventPageProps) {
         {/* Sidebar */}
         <div className="lg:col-span-1">
           <div className="sticky top-20 space-y-4">
-          <div className="rounded-xl border border-border bg-card p-6">
+          <div className="rounded-2xl bg-white p-6 shadow-sm">
             <div className="mb-4 space-y-3">
               <div className="flex items-start gap-3">
                 <span className="text-lg">📅</span>
@@ -278,8 +278,8 @@ export default async function EventPage({ params }: EventPageProps) {
       {/* Другие мероприятия в этом месте */}
       {samePlace.length > 0 && (
         <div className="mt-10">
-          <h2 className="mb-4 text-xl font-bold">Другие мероприятия — {event.place}</h2>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <h2 className="mb-4 text-2xl font-bold text-gray-900">Другие мероприятия — {event.place}</h2>
+          <div className="grid grid-cols-2 gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {samePlace.map((e) => (
               <EventCard key={e.slug} event={e} citySlug={citySlug} />
             ))}
@@ -290,8 +290,8 @@ export default async function EventPage({ params }: EventPageProps) {
       {/* Похожие мероприятия */}
       {similarEvents.length > 0 && (
         <div className="mt-10">
-          <h2 className="mb-4 text-xl font-bold">Похожие мероприятия</h2>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <h2 className="mb-4 text-2xl font-bold text-gray-900">Похожие мероприятия</h2>
+          <div className="grid grid-cols-2 gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {similarEvents.map((e) => (
               <EventCard key={e.slug} event={e} citySlug={citySlug} />
             ))}
@@ -301,7 +301,7 @@ export default async function EventPage({ params }: EventPageProps) {
 
       {/* Mobile sticky buy button */}
       {event.affiliateUrl && (
-        <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background/95 p-3 backdrop-blur lg:hidden">
+        <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-gray-200 bg-white/95 p-3 backdrop-blur lg:hidden">
           <a
             href={event.affiliateUrl}
             target="_blank"

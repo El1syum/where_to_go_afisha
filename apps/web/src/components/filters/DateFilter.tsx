@@ -36,7 +36,6 @@ export function DateFilter() {
   const [viewMonth, setViewMonth] = useState(selectedDate ? selectedDate.getMonth() : today.getMonth());
   const [viewYear, setViewYear] = useState(selectedDate ? selectedDate.getFullYear() : today.getFullYear());
 
-  // Close on outside click
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (calRef.current && !calRef.current.contains(e.target as Node)) {
@@ -81,9 +80,8 @@ export function DateFilter() {
     else setViewMonth(viewMonth + 1);
   }
 
-  // Build calendar grid
   const firstDay = new Date(viewYear, viewMonth, 1);
-  const startWeekday = (firstDay.getDay() + 6) % 7; // Mon=0
+  const startWeekday = (firstDay.getDay() + 6) % 7;
   const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
 
   const cells: (Date | null)[] = [];
@@ -115,8 +113,8 @@ export function DateFilter() {
         onClick={() => { setFilter(""); setCalendarOpen(false); }}
         className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${
           !activeFilter && !activeExact
-            ? "bg-primary text-primary-foreground shadow-sm"
-            : "bg-secondary/70 text-foreground hover:bg-secondary"
+            ? "bg-indigo-500 text-white shadow-sm"
+            : "border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
         }`}
       >
         Все даты
@@ -128,8 +126,8 @@ export function DateFilter() {
           onClick={() => { setFilter(key); setCalendarOpen(false); }}
           className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${
             activeFilter === key
-              ? "bg-primary text-primary-foreground shadow-sm"
-              : "bg-secondary/70 text-foreground hover:bg-secondary"
+              ? "bg-indigo-500 text-white shadow-sm"
+              : "border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
           }`}
         >
           {label}
@@ -142,8 +140,8 @@ export function DateFilter() {
           onClick={() => setCalendarOpen(!calendarOpen)}
           className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-all ${
             activeExact
-              ? "bg-primary text-primary-foreground shadow-sm"
-              : "bg-secondary/70 text-foreground hover:bg-secondary"
+              ? "bg-indigo-500 text-white shadow-sm"
+              : "border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
           }`}
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -153,32 +151,29 @@ export function DateFilter() {
         </button>
 
         {calendarOpen && (
-          <div className="absolute left-0 top-full z-50 mt-2 w-[280px] rounded-2xl border border-border bg-card p-4 shadow-xl">
-            {/* Header */}
+          <div className="absolute left-0 top-full z-50 mt-2 w-[280px] rounded-2xl border border-gray-200 bg-white p-4 shadow-xl">
             <div className="mb-3 flex items-center justify-between">
-              <button onClick={prevMonth} className="rounded-lg p-1.5 hover:bg-secondary">
+              <button onClick={prevMonth} className="rounded-lg p-1.5 hover:bg-gray-100">
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
-              <span className="text-sm font-semibold">
+              <span className="text-sm font-semibold text-gray-900">
                 {MONTHS[viewMonth]} {viewYear}
               </span>
-              <button onClick={nextMonth} className="rounded-lg p-1.5 hover:bg-secondary">
+              <button onClick={nextMonth} className="rounded-lg p-1.5 hover:bg-gray-100">
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                 </svg>
               </button>
             </div>
 
-            {/* Weekday headers */}
             <div className="mb-1 grid grid-cols-7 text-center">
               {WEEKDAYS.map((w) => (
-                <div key={w} className="py-1 text-xs font-medium text-muted-foreground">{w}</div>
+                <div key={w} className="py-1 text-xs font-medium text-gray-400">{w}</div>
               ))}
             </div>
 
-            {/* Days grid */}
             <div className="grid grid-cols-7 gap-0.5">
               {cells.map((date, i) => {
                 if (!date) return <div key={`empty-${i}`} />;
@@ -194,12 +189,12 @@ export function DateFilter() {
                     disabled={isPast}
                     className={`flex h-9 w-9 items-center justify-center rounded-full text-sm transition-all ${
                       isSelected
-                        ? "bg-primary font-semibold text-primary-foreground"
+                        ? "bg-indigo-500 font-semibold text-white"
                         : isToday
-                          ? "border border-primary font-semibold text-primary"
+                          ? "border border-indigo-500 font-semibold text-indigo-500"
                           : isPast
-                            ? "text-muted-foreground/40"
-                            : "text-foreground hover:bg-secondary"
+                            ? "text-gray-300"
+                            : "text-gray-700 hover:bg-gray-100"
                     }`}
                   >
                     {date.getDate()}
@@ -208,17 +203,16 @@ export function DateFilter() {
               })}
             </div>
 
-            {/* Quick actions */}
-            <div className="mt-3 flex gap-2 border-t border-border pt-3">
+            <div className="mt-3 flex gap-2 border-t border-gray-100 pt-3">
               <button
                 onClick={() => { pickDate(today); }}
-                className="flex-1 rounded-lg bg-secondary py-1.5 text-xs font-medium hover:bg-secondary/80"
+                className="flex-1 rounded-lg bg-gray-100 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200"
               >
                 Сегодня
               </button>
               <button
                 onClick={() => { setFilter(""); setCalendarOpen(false); }}
-                className="flex-1 rounded-lg bg-secondary py-1.5 text-xs font-medium hover:bg-secondary/80"
+                className="flex-1 rounded-lg bg-gray-100 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200"
               >
                 Сбросить
               </button>
@@ -235,7 +229,7 @@ export function DateFilter() {
         className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${
           isFree
             ? "bg-green-500 text-white shadow-sm"
-            : "bg-secondary/70 text-foreground hover:bg-secondary"
+            : "border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
         }`}
       >
         Бесплатно
@@ -245,7 +239,7 @@ export function DateFilter() {
         className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${
           isKids
             ? "bg-green-500 text-white shadow-sm"
-            : "bg-secondary/70 text-foreground hover:bg-secondary"
+            : "border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
         }`}
       >
         Детское
@@ -257,8 +251,8 @@ export function DateFilter() {
           onClick={() => toggleParam("age", age)}
           className={`rounded-full px-3 py-2 text-sm font-medium transition-all ${
             ageFilter === age
-              ? "bg-primary text-primary-foreground shadow-sm"
-              : "bg-secondary/70 text-foreground hover:bg-secondary"
+              ? "bg-indigo-500 text-white shadow-sm"
+              : "border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
           }`}
         >
           {age}+

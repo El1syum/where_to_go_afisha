@@ -53,7 +53,6 @@ export function Reviews({ eventId }: { eventId: number }) {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Form state
   const [author, setAuthor] = useState("");
   const [rating, setRating] = useState(0);
   const [text, setText] = useState("");
@@ -111,72 +110,70 @@ export function Reviews({ eventId }: { eventId: number }) {
 
   return (
     <div className="mt-8">
-      <h2 className="mb-4 text-xl font-bold">Отзывы</h2>
+      <h2 className="mb-4 text-xl font-bold text-gray-900">Отзывы</h2>
 
-      {/* Existing reviews */}
       {loading ? (
-        <p className="text-sm text-muted-foreground">Загрузка отзывов...</p>
+        <p className="text-sm text-gray-500">Загрузка отзывов...</p>
       ) : reviews.length > 0 ? (
         <div className="mb-6 space-y-4">
           {reviews.map((review) => (
             <div
               key={review.id}
-              className="rounded-xl border border-border bg-card p-4"
+              className="rounded-2xl bg-white p-4 shadow-sm"
             >
               <div className="mb-1 flex items-center gap-3">
-                <span className="font-semibold">{review.author}</span>
+                <span className="font-semibold text-gray-900">{review.author}</span>
                 <Stars rating={review.rating} />
               </div>
-              <p className="mb-2 text-sm text-foreground whitespace-pre-line">
+              <p className="mb-2 whitespace-pre-line text-sm text-gray-700">
                 {review.text}
               </p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-gray-400">
                 {formatReviewDate(review.createdAt)}
               </p>
             </div>
           ))}
         </div>
       ) : (
-        <p className="mb-6 text-sm text-muted-foreground">
+        <p className="mb-6 text-sm text-gray-500">
           Пока нет отзывов. Будьте первым!
         </p>
       )}
 
-      {/* Submit form */}
       {submitted ? (
-        <div className="rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-800 dark:border-green-800 dark:bg-green-950 dark:text-green-200">
+        <div className="rounded-2xl border border-green-200 bg-green-50 p-4 text-sm text-green-800">
           Спасибо! Ваш отзыв появится после модерации.
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="rounded-xl border border-border bg-card p-4">
-          <h3 className="mb-3 text-base font-semibold">Оставить отзыв</h3>
+        <form onSubmit={handleSubmit} className="rounded-2xl bg-white p-4 shadow-sm">
+          <h3 className="mb-3 text-base font-semibold text-gray-900">Оставить отзыв</h3>
 
           <div className="mb-3">
-            <label className="mb-1 block text-sm font-medium">Ваше имя</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Ваше имя</label>
             <input
               type="text"
               value={author}
               onChange={(e) => setAuthor(e.target.value)}
               placeholder="Имя"
               maxLength={100}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
+              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
             />
           </div>
 
           <div className="mb-3">
-            <label className="mb-1 block text-sm font-medium">Оценка</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Оценка</label>
             <Stars rating={rating} interactive onSelect={setRating} />
           </div>
 
           <div className="mb-3">
-            <label className="mb-1 block text-sm font-medium">Отзыв</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Отзыв</label>
             <textarea
               value={text}
               onChange={(e) => setText(e.target.value)}
               placeholder="Расскажите о мероприятии..."
               rows={3}
               maxLength={2000}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
+              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
             />
           </div>
 
@@ -187,7 +184,7 @@ export function Reviews({ eventId }: { eventId: number }) {
           <button
             type="submit"
             disabled={submitting}
-            className="rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+            className="rounded-xl bg-indigo-500 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-600 disabled:opacity-50"
           >
             {submitting ? "Отправка..." : "Отправить"}
           </button>

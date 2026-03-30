@@ -100,7 +100,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
         ])}
       />
 
-      <h1 className="mb-6 text-2xl font-bold md:text-3xl">
+      <h1 className="mb-6 text-2xl font-bold text-gray-900 md:text-3xl">
         {category.name} в {cityIn}
       </h1>
 

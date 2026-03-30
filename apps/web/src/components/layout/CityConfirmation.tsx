@@ -24,13 +24,11 @@ export function CityConfirmation({
   } | null>(null);
 
   useEffect(() => {
-    // Don't show if user already confirmed
     const confirmed = document.cookie
       .split("; ")
       .find((c) => c.startsWith("city_confirmed="));
     if (confirmed) return;
 
-    // Detect city via API (only show popup, never redirect)
     fetch("/api/geo")
       .then((r) => r.json())
       .then((data) => {
@@ -42,7 +40,6 @@ export function CityConfirmation({
         setVisible(true);
       })
       .catch(() => {
-        // Geo failed — still show confirmation for current city
         setDetectedCity({ slug: citySlug, name: currentCityName });
         setVisible(true);
       });
@@ -53,7 +50,6 @@ export function CityConfirmation({
     document.cookie = `preferred_city=${slug};path=/;max-age=${365 * 24 * 60 * 60}`;
     document.cookie = `city_confirmed=1;path=/;max-age=${365 * 24 * 60 * 60}`;
     setVisible(false);
-    // Redirect only if user confirms a different city
     if (slug !== citySlug) {
       router.push(`/${slug}`);
     }
@@ -67,20 +63,20 @@ export function CityConfirmation({
   if (!visible || !detectedCity) return null;
 
   return (
-    <div className="absolute right-0 top-full mt-2 z-50 w-64 rounded-xl border border-border bg-card p-4 shadow-xl animate-in fade-in slide-in-from-top-2 duration-200">
-      <p className="mb-3 text-sm font-medium">
+    <div className="absolute right-0 top-full z-50 mt-2 w-64 rounded-2xl bg-white p-4 shadow-xl animate-in fade-in slide-in-from-top-2 duration-200">
+      <p className="mb-3 text-sm font-medium text-gray-900">
         Ваш город — {detectedCity.name}?
       </p>
       <div className="flex gap-2">
         <button
           onClick={confirmCity}
-          className="flex-1 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+          className="flex-1 rounded-lg bg-indigo-500 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-600"
         >
           Да
         </button>
         <button
           onClick={chooseAnother}
-          className="flex-1 rounded-lg border border-border px-3 py-2 text-sm font-medium transition-colors hover:bg-secondary"
+          className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
         >
           Нет, другой
         </button>

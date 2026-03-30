@@ -17,9 +17,9 @@ function MiniCard({ event, citySlug }: { event: CollectionEvent; citySlug: strin
   return (
     <Link
       href={`/${citySlug}/${event.category.slug}/${event.slug}`}
-      className="group flex-shrink-0 w-44 sm:w-52 overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg"
+      className="group w-44 flex-shrink-0 overflow-hidden rounded-2xl bg-white shadow-sm transition-shadow duration-200 hover:shadow-md sm:w-52"
     >
-      <div className="relative z-0 aspect-[4/3] overflow-hidden bg-secondary">
+      <div className="relative z-0 aspect-[4/3] overflow-hidden">
         {event.imageUrl ? (
           <Image
             src={event.imageUrl}
@@ -27,22 +27,22 @@ function MiniCard({ event, citySlug }: { event: CollectionEvent; citySlug: strin
             fill
             className={
               isKassir
-                ? "object-contain bg-white transition-transform duration-500 group-hover:scale-110"
-                : "object-cover transition-transform duration-500 group-hover:scale-110"
+                ? "object-contain bg-white transition-transform duration-500 group-hover:scale-105"
+                : "object-cover transition-transform duration-500 group-hover:scale-105"
             }
             sizes="208px"
           />
         ) : (
-          <div className="flex h-full items-center justify-center text-4xl opacity-30">
+          <div className="flex h-full items-center justify-center bg-gray-100 text-4xl opacity-30">
             {event.category.icon || "📌"}
           </div>
         )}
       </div>
-      <div className="p-2.5">
-        <h3 className="mb-1 line-clamp-2 text-sm font-semibold leading-snug group-hover:text-primary">
+      <div className="p-3">
+        <h3 className="mb-1 line-clamp-2 text-sm font-semibold leading-snug text-gray-900 group-hover:text-indigo-600">
           {event.title}
         </h3>
-        <p className="text-xs text-muted-foreground">{formatDate(event.date)}</p>
+        <p className="text-xs text-gray-500">{formatDate(event.date)}</p>
       </div>
     </Link>
   );
@@ -50,10 +50,12 @@ function MiniCard({ event, citySlug }: { event: CollectionEvent; citySlug: strin
 
 function CollectionRow({
   title,
+  linkHref,
   events,
   citySlug,
 }: {
   title: string;
+  linkHref?: string;
   events: CollectionEvent[];
   citySlug: string;
 }) {
@@ -61,8 +63,15 @@ function CollectionRow({
 
   return (
     <section className="mb-8">
-      <h2 className="mb-3 text-xl font-bold">{title}</h2>
-      <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
+        {linkHref && (
+          <Link href={linkHref} className="text-sm font-medium text-indigo-500 hover:text-indigo-600">
+            Смотреть все &rarr;
+          </Link>
+        )}
+      </div>
+      <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
         {events.map((event) => (
           <MiniCard key={event.slug} event={event} citySlug={citySlug} />
         ))}
@@ -120,8 +129,8 @@ export async function Collections({ cityId, citySlug }: CollectionsProps) {
   return (
     <div className="mb-8">
       <CollectionRow title="Популярное на этой неделе" events={popular} citySlug={citySlug} />
-      <CollectionRow title="Концерты и шоу" events={concerts} citySlug={citySlug} />
-      <CollectionRow title="Для детей" events={kids} citySlug={citySlug} />
+      <CollectionRow title="Концерты и шоу" linkHref={`/${citySlug}/concerts`} events={concerts} citySlug={citySlug} />
+      <CollectionRow title="Для детей" linkHref={`/${citySlug}/kids`} events={kids} citySlug={citySlug} />
     </div>
   );
 }

@@ -8,6 +8,7 @@ import { DateFilter } from "@/components/filters/DateFilter";
 import { JsonLd, breadcrumbJsonLd } from "@/components/seo/JsonLd";
 import { CitySocials } from "@/components/layout/CitySocials";
 import { Collections } from "@/components/events/Collections";
+import { HeroBanner } from "@/components/layout/HeroBanner";
 export const revalidate = 3600;
 
 interface CityPageProps {
@@ -89,7 +90,9 @@ export default async function CityPage({ params, searchParams }: CityPageProps) 
         ])}
       />
 
-      <h1 className="mb-6 text-2xl font-bold md:text-3xl">
+      <HeroBanner citySlug={citySlug} cityName={city.name} />
+
+      <h1 className="mb-6 text-2xl font-bold text-gray-900 md:text-3xl">
         Куда сходить в {cityIn}
       </h1>
 

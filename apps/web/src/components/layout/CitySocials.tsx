@@ -1,9 +1,9 @@
 import { prisma } from "@/lib/db";
 
 const PLATFORM_CONFIG: Record<string, { label: string; icon: string; color: string }> = {
-  TELEGRAM: { label: "Telegram", icon: "📨", color: "bg-blue-50 text-blue-700 border-blue-200" },
-  VK: { label: "VK", icon: "💬", color: "bg-indigo-50 text-indigo-700 border-indigo-200" },
-  MAX: { label: "Max", icon: "💎", color: "bg-purple-50 text-purple-700 border-purple-200" },
+  TELEGRAM: { label: "Telegram", icon: "📨", color: "bg-blue-50 text-blue-700" },
+  VK: { label: "VK", icon: "💬", color: "bg-indigo-50 text-indigo-700" },
+  MAX: { label: "Max", icon: "💎", color: "bg-purple-50 text-purple-700" },
 };
 
 export async function CitySocials({ cityId }: { cityId: number }) {
@@ -23,14 +23,14 @@ export async function CitySocials({ cityId }: { cityId: number }) {
   }
 
   return (
-    <div className="mt-8 rounded-xl border border-border bg-card p-5">
-      <h2 className="mb-4 text-lg font-semibold">Мы в соцсетях</h2>
+    <div className="mt-8 rounded-2xl bg-white p-5 shadow-sm">
+      <h2 className="mb-4 text-lg font-semibold text-gray-900">Мы в соцсетях</h2>
       <div className="space-y-3">
         {[...grouped.entries()].map(([platform, chs]) => {
-          const cfg = PLATFORM_CONFIG[platform] || { label: platform, icon: "📌", color: "bg-secondary" };
+          const cfg = PLATFORM_CONFIG[platform] || { label: platform, icon: "📌", color: "bg-gray-100 text-gray-700" };
           return (
             <div key={platform}>
-              <div className="mb-2 flex items-center gap-2 text-sm font-medium">
+              <div className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700">
                 <span>{cfg.icon}</span>
                 <span>{cfg.label}</span>
               </div>
@@ -41,7 +41,7 @@ export async function CitySocials({ cityId }: { cityId: number }) {
                     href={ch.channelUrl!}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm transition-colors hover:opacity-80 ${cfg.color}`}
+                    className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm transition-colors hover:opacity-80 ${cfg.color}`}
                   >
                     <span className="font-medium">{ch.name}</span>
                     {ch.description && <span className="text-xs opacity-70">— {ch.description}</span>}
