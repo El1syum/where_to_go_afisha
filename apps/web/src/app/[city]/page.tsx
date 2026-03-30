@@ -90,7 +90,7 @@ export default async function CityPage({ params, searchParams }: CityPageProps) 
         ])}
       />
 
-      <HeroBanner citySlug={citySlug} cityName={city.name} />
+      <HeroBanner citySlug={citySlug} />
 
       <h1 className="mb-6 text-2xl font-bold text-gray-900 md:text-3xl">
         Куда сходить в {cityIn}
