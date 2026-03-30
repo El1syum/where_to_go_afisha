@@ -115,12 +115,12 @@ export function HeroBanner({ citySlug }: HeroBannerProps) {
           key={`cta-${current}`}
           className="mb-6 animate-[fadeSlideUp_0.6s_0.2s_ease-out_both]"
         >
-          <Link
+          {/* <Link
             href={`/${citySlug}`}
             className="inline-block rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
           >
             Выбрать событие
-          </Link>
+          </Link> */}
         </div>
 
         {/* Dots indicator */}
