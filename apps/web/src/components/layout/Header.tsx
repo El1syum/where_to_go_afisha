@@ -31,7 +31,7 @@ export function Header({ cities, currentCityName }: HeaderProps) {
 
   return (
     <>
-      <header className="bg-[#1e1b3a]">
+      <header className="sticky top-0 z-50 bg-[#1e1b3a]">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
           {/* Left: City | Brand */}
           <Link href={citySlug ? `/${citySlug}` : "/"} className="flex shrink-0 items-center gap-2 font-bold">

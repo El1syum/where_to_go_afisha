@@ -38,10 +38,8 @@ export default async function CityLayout({ children, params }: CityLayoutProps) 
 
   return (
     <div className="flex min-h-screen flex-col bg-[#f3f4f6]">
-      <div className="sticky top-0 z-50 rounded-b-3xl bg-[#1e1b3a] shadow-lg">
-        <Header cities={cities} currentCityName={city.name} />
-        <CategoryNav categories={categories} />
-      </div>
+      <Header cities={cities} currentCityName={city.name} />
+      <CategoryNav categories={categories} />
       <div className="mx-auto flex w-full max-w-7xl flex-1 gap-6 px-4 py-6 pb-20 sm:px-6 lg:pb-6">
         <main className="min-w-0 flex-1">
           {children}
