@@ -10,6 +10,16 @@ export const config = {
     cronSchedule: process.env.XML_CRON || "0 8 * * *", // daily at 08:00
     batchSize: 500,
   },
+  advcakeFeed: {
+    url: process.env.ADVCAKE_FEED_URL || "",
+    cronSchedule: process.env.ADVCAKE_CRON || "0 9 * * *", // daily at 09:00
+    batchSize: 500,
+  },
+  admitadFeed: {
+    url: process.env.ADMITAD_FEED_URL || "",
+    cronSchedule: process.env.ADMITAD_CRON || "0 10 * * *", // daily at 10:00
+    batchSize: 500,
+  },
   telegram: {
     botToken: process.env.TELEGRAM_BOT_TOKEN || "",
     cronSchedule: process.env.TG_CRON || "*/30 * * * *", // every 30 minutes

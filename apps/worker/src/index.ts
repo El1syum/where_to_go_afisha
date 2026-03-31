@@ -4,6 +4,8 @@ import { logger } from "./shared/logger.js";
 import { config } from "./shared/config.js";
 import { prisma } from "./shared/db.js";
 import { runXmlImport } from "./xml-importer/scheduler.js";
+import { runAdvCakeImport } from "./advcake-importer/scheduler.js";
+import { runAdmitadImport } from "./admitad-importer/scheduler.js";
 import { runTelegramPosting } from "./telegram/scheduler.js";
 import { startBotPolling } from "./telegram/bot-polling.js";
 import { notifyAdmin } from "./telegram/notify.js";
@@ -22,10 +24,24 @@ async function deactivatePastEvents() {
 // CLI: run import once if --import flag is passed
 const args = process.argv.slice(2);
 if (args.includes("--import")) {
-  logger.info("Running one-time XML import...");
-  runXmlImport(args.includes("--local") ? "example.xml" : undefined)
-    .then(() => { logger.info("Import done"); process.exit(0); })
-    .catch((e) => { logger.error(e, "Import failed"); process.exit(1); });
+  const local = args.includes("--local");
+
+  if (args.includes("--advcake")) {
+    logger.info("Running one-time AdvCake import...");
+    runAdvCakeImport(local ? "advcake.xml" : undefined)
+      .then(() => { logger.info("AdvCake import done"); process.exit(0); })
+      .catch((e) => { logger.error(e, "AdvCake import failed"); process.exit(1); });
+  } else if (args.includes("--admitad")) {
+    logger.info("Running one-time Admitad import...");
+    runAdmitadImport(local ? "admitad.xml" : undefined)
+      .then(() => { logger.info("Admitad import done"); process.exit(0); })
+      .catch((e) => { logger.error(e, "Admitad import failed"); process.exit(1); });
+  } else {
+    logger.info("Running one-time XML import...");
+    runXmlImport(local ? "example.xml" : undefined)
+      .then(() => { logger.info("Import done"); process.exit(0); })
+      .catch((e) => { logger.error(e, "Import failed"); process.exit(1); });
+  }
 } else {
   main().catch((e) => { logger.error(e, "Worker failed to start"); process.exit(1); });
 }
@@ -33,7 +49,7 @@ if (args.includes("--import")) {
 async function main() {
   logger.info("Worker starting...");
 
-  // XML import cron
+  // XML import cron (Yandex Afisha)
   if (config.xmlFeed.url) {
     cron.schedule(config.xmlFeed.cronSchedule, async () => {
       logger.info("Starting scheduled XML import...");
@@ -44,6 +60,32 @@ async function main() {
     logger.info(`XML import scheduled: ${config.xmlFeed.cronSchedule}`);
   } else {
     logger.warn("XML_FEED_URL not set, XML import disabled");
+  }
+
+  // AdvCake import cron (ticketland.ru)
+  if (config.advcakeFeed.url) {
+    cron.schedule(config.advcakeFeed.cronSchedule, async () => {
+      logger.info("Starting scheduled AdvCake import...");
+      await runAdvCakeImport().catch((e) =>
+        logger.error(e, "AdvCake import failed")
+      );
+    });
+    logger.info(`AdvCake import scheduled: ${config.advcakeFeed.cronSchedule}`);
+  } else {
+    logger.warn("ADVCAKE_FEED_URL not set, AdvCake import disabled");
+  }
+
+  // Admitad import cron (afisha.ru)
+  if (config.admitadFeed.url) {
+    cron.schedule(config.admitadFeed.cronSchedule, async () => {
+      logger.info("Starting scheduled Admitad import...");
+      await runAdmitadImport().catch((e) =>
+        logger.error(e, "Admitad import failed")
+      );
+    });
+    logger.info(`Admitad import scheduled: ${config.admitadFeed.cronSchedule}`);
+  } else {
+    logger.warn("ADMITAD_FEED_URL not set, Admitad import disabled");
   }
 
   // Telegram posting cron
