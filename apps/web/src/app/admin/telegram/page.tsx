@@ -2,9 +2,12 @@ import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { CityEditForm } from "@/components/admin/CityEditForm";
+import { GlobalTemplateEditor } from "@/components/admin/GlobalTemplateEditor";
 
 export default async function AdminTelegramPage() {
   await requireAdmin();
+
+  const globalTemplate = await prisma.setting.findUnique({ where: { key: "post_template" } });
 
   const cities = await prisma.city.findMany({
     where: { isActive: true },
@@ -45,6 +48,11 @@ export default async function AdminTelegramPage() {
           <div className="text-2xl font-bold">{recentPosts.filter((p) => p.status === "SENT").length}</div>
           <div className="text-xs text-muted-foreground">Отправлено (посл. 20)</div>
         </div>
+      </div>
+
+      {/* Global template */}
+      <div className="mb-8">
+        <GlobalTemplateEditor initialTemplate={globalTemplate?.value ?? null} />
       </div>
 
       {/* Cities with channels */}
