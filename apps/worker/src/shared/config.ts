@@ -20,6 +20,11 @@ export const config = {
     cronSchedule: process.env.ADMITAD_CRON || "0 10 * * *", // daily at 10:00
     batchSize: 500,
   },
+  kassirFeed: {
+    url: process.env.KASSIR_FEED_URL || "",
+    cronSchedule: process.env.KASSIR_CRON || "0 11 * * *", // daily at 11:00
+    batchSize: 500,
+  },
   telegram: {
     botToken: process.env.TELEGRAM_BOT_TOKEN || "",
     cronSchedule: process.env.TG_CRON || "*/30 * * * *", // every 30 minutes

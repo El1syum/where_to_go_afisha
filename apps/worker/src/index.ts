@@ -6,6 +6,7 @@ import { prisma } from "./shared/db.js";
 import { runXmlImport } from "./xml-importer/scheduler.js";
 import { runAdvCakeImport } from "./advcake-importer/scheduler.js";
 import { runAdmitadImport } from "./admitad-importer/scheduler.js";
+import { runKassirImport } from "./kassir-importer/scheduler.js";
 import { runTelegramPosting } from "./telegram/scheduler.js";
 import { startBotPolling } from "./telegram/bot-polling.js";
 import { notifyAdmin } from "./telegram/notify.js";
@@ -36,6 +37,11 @@ if (args.includes("--import")) {
     runAdmitadImport(local ? "admitad.xml" : undefined)
       .then(() => { logger.info("Admitad import done"); process.exit(0); })
       .catch((e) => { logger.error(e, "Admitad import failed"); process.exit(1); });
+  } else if (args.includes("--kassir")) {
+    logger.info("Running one-time Kassir import...");
+    runKassirImport(local ? "kassir.xml" : undefined)
+      .then(() => { logger.info("Kassir import done"); process.exit(0); })
+      .catch((e) => { logger.error(e, "Kassir import failed"); process.exit(1); });
   } else {
     logger.info("Running one-time XML import...");
     runXmlImport(local ? "example.xml" : undefined)
@@ -86,6 +92,19 @@ async function main() {
     logger.info(`Admitad import scheduled: ${config.admitadFeed.cronSchedule}`);
   } else {
     logger.warn("ADMITAD_FEED_URL not set, Admitad import disabled");
+  }
+
+  // Kassir import cron (kassir.ru)
+  if (config.kassirFeed.url) {
+    cron.schedule(config.kassirFeed.cronSchedule, async () => {
+      logger.info("Starting scheduled Kassir import...");
+      await runKassirImport().catch((e) =>
+        logger.error(e, "Kassir import failed")
+      );
+    });
+    logger.info(`Kassir import scheduled: ${config.kassirFeed.cronSchedule}`);
+  } else {
+    logger.warn("KASSIR_FEED_URL not set, Kassir import disabled");
   }
 
   // Telegram posting cron
