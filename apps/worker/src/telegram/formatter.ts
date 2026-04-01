@@ -122,6 +122,10 @@ export async function formatTelegramPost(
     text = text.replaceAll(key, value);
   }
 
+  // Sanitize: replace <br> with newlines, strip unsupported HTML tags
+  // Telegram supports only: <b>, <i>, <u>, <s>, <a>, <code>, <pre>, <blockquote>
+  text = text.replace(/<br\s*\/?>/gi, "\n");
+  text = text.replace(/<\/?(p|div|span|ul|ol|li|h[1-6]|img|table|tr|td|th|thead|tbody|font|center|section|article|header|footer|nav|main|aside|figure|figcaption|details|summary|mark|small|sub|sup|dl|dt|dd|hr|wbr|abbr|address|cite|q|var|samp|kbd|ruby|rt|rp|bdi|bdo|data|time|meter|progress|output|canvas|svg|math|iframe|embed|object|video|audio|source|track|map|area|form|input|textarea|select|option|button|label|fieldset|legend|datalist|optgroup|keygen)(\s[^>]*)?\/?>/gi, "");
   // Clean up empty lines (more than 2 consecutive)
   text = text.replace(/\n{3,}/g, "\n\n").trim();
 
