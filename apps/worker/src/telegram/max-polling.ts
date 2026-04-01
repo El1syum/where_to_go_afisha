@@ -99,10 +99,18 @@ async function pollUpdates() {
     for (const update of data.updates || []) {
       const u = update as Record<string, unknown>;
       const updateType = String(u.update_type || u.type || "unknown");
-      logger.info({ updateType, chatId: u.chat_id, data: JSON.stringify(u).substring(0, 500) }, "Max update received");
 
       if (updateType === "bot_added" || updateType === "bot_started") {
         await handleBotAdded(u);
+      }
+
+      // Max sends "user_added" when bot is added to channel (not "bot_added")
+      if (updateType === "user_added") {
+        const user = u.user as Record<string, unknown> | undefined;
+        if (user?.is_bot === true) {
+          logger.info({ chatId: u.chat_id }, "Max: bot added via user_added event");
+          await handleBotAdded(u);
+        }
       }
     }
   } catch (err) {
