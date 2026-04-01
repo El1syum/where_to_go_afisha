@@ -98,24 +98,33 @@ async function pollUpdates() {
 }
 
 async function handleBotAdded(update: Record<string, unknown>) {
-  // The chat object can be at update.chat or nested differently
+  // chat_id can be at update.chat.chat_id or directly at update.chat_id
   const chat = update.chat as Record<string, unknown> | undefined;
-  if (!chat) {
-    logger.info({ update }, "Max bot_added: no chat object");
-    return;
-  }
-
-  const chatId = String(chat.chat_id || "");
-  const title = String(chat.title || "");
-  const chatType = String(chat.type || "");
-  const chatLink = chat.link ? String(chat.link) : null;
+  const chatId = String(chat?.chat_id || update.chat_id || "");
 
   if (!chatId) {
     logger.warn({ update }, "Max bot_added: no chat_id");
     return;
   }
 
-  logger.info({ chatId, title, chatType }, "Max: bot added to chat");
+  // Title might not be in the event — fetch chat info from API
+  let title = String(chat?.title || "");
+  let chatLink = chat?.link ? String(chat.link) : null;
+
+  if (!title) {
+    try {
+      const res = await maxApi(`/chats/${chatId}`);
+      if (res.ok) {
+        const chatInfo = await res.json() as Record<string, unknown>;
+        title = String(chatInfo.title || "");
+        chatLink = chatInfo.link ? String(chatInfo.link) : null;
+      }
+    } catch (err) {
+      logger.warn({ err, chatId }, "Could not fetch Max chat info");
+    }
+  }
+
+  logger.info({ chatId, title, isChannel: update.is_channel }, "Max: bot added to chat");
 
   // Check if already exists
   const existing = await prisma.channel.findFirst({
