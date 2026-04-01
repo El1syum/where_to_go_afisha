@@ -32,6 +32,9 @@ export const config = {
     maxPostsPerRun: 10,
     daysAhead: 14,
   },
+  max: {
+    botToken: process.env.MAX_BOT_TOKEN || "",
+  },
   cleanup: {
     cronSchedule: "0 3 * * *", // daily at 3:00 AM
   },

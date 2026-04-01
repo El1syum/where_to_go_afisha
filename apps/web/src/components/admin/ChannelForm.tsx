@@ -49,7 +49,7 @@ export function ChannelForm({ cities, categories, editChannel }: ChannelFormProp
     publishHourFrom: editChannel?.publishHourFrom ?? 9,
     publishHourTo: editChannel?.publishHourTo ?? 22,
     maxPostsPerDay: editChannel?.maxPostsPerDay ?? 10,
-    postIntervalMinutes: editChannel?.postIntervalMinutes ?? 30,
+    postIntervalMinutes: editChannel?.postIntervalMinutes ?? 240,
     postTemplate: editChannel?.postTemplate || `<TYPE_EMOJI> <b><TYPE></b>\n━━━━━━━━━━━━━━━\n<b><NAME></b>\n\n<<DESCRIPTION>>\n\n📅 <DATE>\n📍 <PLACE>\n💰 <PRICE>\n\n🎟 <a href="<URL>"><BUTTON></a>\n\n<TAGS>`,
     aiRephrase: editChannel?.aiRephrase || false,
     aiModel: editChannel?.aiModel || "",
@@ -68,7 +68,7 @@ export function ChannelForm({ cities, categories, editChannel }: ChannelFormProp
       aiModel: form.aiModel || null,
       aiPrompt: form.aiPrompt || null,
       description: form.description || null,
-      postIntervalMinutes: Number(form.postIntervalMinutes) || 30,
+      postIntervalMinutes: Number(form.postIntervalMinutes) || 240,
       postTemplate: form.postTemplate || null,
       channelUrl: form.channelUrl || null,
     };
@@ -144,12 +144,16 @@ export function ChannelForm({ cities, categories, editChannel }: ChannelFormProp
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block text-xs text-muted-foreground">ID канала (@username или -100...)</label>
-              <input value={form.channelId} onChange={(e) => set("channelId", e.target.value)} placeholder="@afisha_msk" className={inputCls} />
+              <label className="mb-1 block text-xs text-muted-foreground">
+                {form.platform === "MAX" ? "Chat ID (число)" : "ID канала (@username или -100...)"}
+              </label>
+              <input value={form.channelId} onChange={(e) => set("channelId", e.target.value)}
+                placeholder={form.platform === "MAX" ? "12345678" : "@afisha_msk"} className={inputCls} />
             </div>
             <div>
               <label className="mb-1 block text-xs text-muted-foreground">Ссылка</label>
-              <input value={form.channelUrl} onChange={(e) => set("channelUrl", e.target.value)} placeholder="https://t.me/..." className={inputCls} />
+              <input value={form.channelUrl} onChange={(e) => set("channelUrl", e.target.value)}
+                placeholder={form.platform === "MAX" ? "https://max.ru/..." : "https://t.me/..."} className={inputCls} />
             </div>
           </div>
 
