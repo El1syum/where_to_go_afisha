@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { buildDateFilter } from "@/lib/utils";
+import { buildDateFilter, buildPriceFilter } from "@/lib/utils";
 import { EventGrid } from "@/components/events/EventGrid";
 import { DateFilter } from "@/components/filters/DateFilter";
 import { JsonLd, breadcrumbJsonLd } from "@/components/seo/JsonLd";
@@ -10,7 +10,7 @@ export const revalidate = 3600;
 
 interface CategoryPageProps {
   params: Promise<{ city: string; category: string }>;
-  searchParams: Promise<{ date?: string; exact?: string; free?: string; kids?: string; age?: string }>;
+  searchParams: Promise<{ date?: string; exact?: string; free?: string; kids?: string; age?: string; price?: string }>;
 }
 
 export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
@@ -42,7 +42,7 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
 
 export default async function CategoryPage({ params, searchParams }: CategoryPageProps) {
   const { city: citySlug, category: categorySlug } = await params;
-  const { date: dateFilter, exact: exactDate, free, kids, age } = await searchParams;
+  const { date: dateFilter, exact: exactDate, free, kids, age, price } = await searchParams;
 
   const [city, category] = await Promise.all([
     prisma.city.findUnique({
@@ -73,6 +73,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
   }
   if (kids === "1") where.isKids = true;
   if (age) where.age = parseInt(age);
+  andConditions.push(...buildPriceFilter(price));
   if (andConditions.length > 0) where.AND = andConditions;
 
   const [events, total] = await Promise.all([

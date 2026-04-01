@@ -95,6 +95,7 @@ export function DateFilter() {
   const isFree = searchParams.get("free") === "1";
   const isKids = searchParams.get("kids") === "1";
   const ageFilter = searchParams.get("age") || "";
+  const priceFilter = searchParams.get("price") || "";
 
   function toggleParam(key: string, value: string) {
     const params = new URLSearchParams(searchParams.toString());
@@ -256,6 +257,27 @@ export function DateFilter() {
           }`}
         >
           {age}+
+        </button>
+      ))}
+
+      <span className="mx-1 text-gray-300">|</span>
+
+      {[
+        { key: "0-1000", label: "до 1 000 ₽" },
+        { key: "1000-2000", label: "1 000 – 2 000 ₽" },
+        { key: "2000-4000", label: "2 000 – 4 000 ₽" },
+        { key: "4000+", label: "от 4 000 ₽" },
+      ].map((p) => (
+        <button
+          key={p.key}
+          onClick={() => toggleParam("price", p.key)}
+          className={`rounded-full px-3 py-2 text-sm font-medium transition-all ${
+            priceFilter === p.key
+              ? "bg-indigo-500 text-white shadow-sm"
+              : "border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+          }`}
+        >
+          {p.label}
         </button>
       ))}
     </div>

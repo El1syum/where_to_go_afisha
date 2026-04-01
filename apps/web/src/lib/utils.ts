@@ -110,6 +110,26 @@ export function buildDateFilter(
   }
 }
 
+/**
+ * Builds Prisma price filter conditions from price range key.
+ * Returns array of AND conditions to push into query.
+ */
+export function buildPriceFilter(priceKey?: string | null): unknown[] {
+  if (!priceKey) return [];
+  switch (priceKey) {
+    case "0-1000":
+      return [{ price: { gt: 0 } }, { price: { lte: 1000 } }];
+    case "1000-2000":
+      return [{ price: { gt: 1000 } }, { price: { lte: 2000 } }];
+    case "2000-4000":
+      return [{ price: { gt: 2000 } }, { price: { lte: 4000 } }];
+    case "4000+":
+      return [{ price: { gt: 4000 } }];
+    default:
+      return [];
+  }
+}
+
 export function slugify(str: string): string {
   return transliterate(str)
     .replace(/[^a-z0-9]+/g, "-")

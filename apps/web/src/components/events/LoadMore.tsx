@@ -67,9 +67,11 @@ export function LoadMore({
           const free = searchParams.get("free");
           const kids = searchParams.get("kids");
           const age = searchParams.get("age");
+          const price = searchParams.get("price");
           if (free) params.set("free", free);
           if (kids) params.set("kids", kids);
           if (age) params.set("age", age);
+          if (price) params.set("price", price);
 
           fetch(`/api/events?${params}`)
             .then((r) => r.json())

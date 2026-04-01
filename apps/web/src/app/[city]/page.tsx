@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { buildDateFilter } from "@/lib/utils";
+import { buildDateFilter, buildPriceFilter } from "@/lib/utils";
 import { EventGrid } from "@/components/events/EventGrid";
 import { DateFilter } from "@/components/filters/DateFilter";
 import { JsonLd, breadcrumbJsonLd } from "@/components/seo/JsonLd";
@@ -13,7 +13,7 @@ export const revalidate = 3600;
 
 interface CityPageProps {
   params: Promise<{ city: string }>;
-  searchParams: Promise<{ date?: string; exact?: string; free?: string; kids?: string; age?: string }>;
+  searchParams: Promise<{ date?: string; exact?: string; free?: string; kids?: string; age?: string; price?: string }>;
 }
 
 export async function generateMetadata({ params }: CityPageProps): Promise<Metadata> {
@@ -40,7 +40,7 @@ export async function generateMetadata({ params }: CityPageProps): Promise<Metad
 
 export default async function CityPage({ params, searchParams }: CityPageProps) {
   const { city: citySlug } = await params;
-  const { date: dateFilter, exact: exactDate, free, kids, age } = await searchParams;
+  const { date: dateFilter, exact: exactDate, free, kids, age, price } = await searchParams;
 
   const city = await prisma.city.findUnique({
     where: { slug: citySlug },
@@ -64,6 +64,7 @@ export default async function CityPage({ params, searchParams }: CityPageProps) 
   }
   if (kids === "1") where.isKids = true;
   if (age) where.age = parseInt(age);
+  andConditions.push(...buildPriceFilter(price));
   if (andConditions.length > 0) where.AND = andConditions;
 
   const [events, total] = await Promise.all([
