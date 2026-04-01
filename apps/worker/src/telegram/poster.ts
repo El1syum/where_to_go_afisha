@@ -84,32 +84,47 @@ export async function postNewEvents(): Promise<number> {
       ? { slug: { in: JSON.parse(channel.categories) as string[] } }
       : undefined;
 
-    const events = await prisma.event.findMany({
-      where: {
-        cityId: channel.cityId,
-        isActive: true,
-        isApproved: true,
-        date: { gt: now, lt: futureLimit },
-        ...(categoryFilter && { category: categoryFilter }),
-        ...(channel.kidsOnly && { isKids: true }),
-        ...(channel.minAge != null && { age: { gte: channel.minAge } }),
-        telegramPosts: {
-          none: { channelDbId: channel.id },
-        },
-      },
-      include: {
-        city: true,
-        category: true,
-      },
-      orderBy: [
-        { createdAt: "desc" },  // New events first (freshly imported)
-        { price: "desc" },      // Then by price descending (expensive first)
-        { date: "asc" },        // Then by nearest date
-      ],
-      take: 1,
-    });
+    // Build category filter for raw query
+    let categoryWhere = "";
+    if (categoryFilter) {
+      const slugs = JSON.parse(channel.categories!) as string[];
+      categoryWhere = `AND c."slug" IN (${slugs.map(s => `'${s.replace(/'/g, "''")}'`).join(",")})`;
+    }
 
-    for (const event of events) {
+    let extraWhere = "";
+    if (channel.kidsOnly) extraWhere += ` AND e."isKids" = true`;
+    if (channel.minAge != null) extraWhere += ` AND e."age" >= ${channel.minAge}`;
+
+    // Priority: newest imports first (createdAt desc), then expensive first (price desc nulls last), then nearest date
+    const events = await prisma.$queryRawUnsafe<Array<{id: number}>>(`
+      SELECT e."id"
+      FROM "Event" e
+      JOIN "Category" c ON c."id" = e."categoryId"
+      WHERE e."cityId" = $1
+        AND e."isActive" = true
+        AND e."isApproved" = true
+        AND e."date" > $2
+        AND e."date" < $3
+        ${categoryWhere}
+        ${extraWhere}
+        AND NOT EXISTS (
+          SELECT 1 FROM "TelegramPost" tp
+          WHERE tp."eventId" = e."id" AND tp."channelDbId" = $4
+        )
+      ORDER BY e."createdAt" DESC, e."price" DESC NULLS LAST, e."date" ASC
+      LIMIT 1
+    `, channel.cityId, now, futureLimit, channel.id);
+
+    // Load full event data
+    const eventIds = events.map(e => e.id);
+    const fullEvents = eventIds.length > 0
+      ? await prisma.event.findMany({
+          where: { id: { in: eventIds } },
+          include: { city: true, category: true },
+        })
+      : [];
+
+    for (const event of fullEvents) {
       try {
         const { text, imageUrl } = await formatTelegramPost(
           event,
