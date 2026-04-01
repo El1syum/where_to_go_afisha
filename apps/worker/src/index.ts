@@ -9,6 +9,7 @@ import { runAdmitadImport } from "./admitad-importer/scheduler.js";
 import { runKassirImport } from "./kassir-importer/scheduler.js";
 import { runTelegramPosting } from "./telegram/scheduler.js";
 import { startBotPolling } from "./telegram/bot-polling.js";
+import { startMaxPolling } from "./telegram/max-polling.js";
 import { notifyAdmin } from "./telegram/notify.js";
 
 async function deactivatePastEvents() {
@@ -129,6 +130,11 @@ async function main() {
     );
   });
   logger.info(`Past events cleanup scheduled: ${config.cleanup.cronSchedule}`);
+
+  // Max auto-channel detection
+  if (config.max.botToken) {
+    startMaxPolling().catch((e) => logger.error(e, "Max polling failed"));
+  }
 
   logger.info("Worker is running. Press Ctrl+C to stop.");
 }
