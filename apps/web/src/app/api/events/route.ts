@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { buildPriceFilter } from "@/lib/utils";
+import { buildPriceFilter, interleaveByCategory } from "@/lib/utils";
 import { ITEMS_PER_PAGE } from "@/lib/constants";
 
 export async function GET(request: NextRequest) {
@@ -53,19 +53,21 @@ export async function GET(request: NextRequest) {
   andConditions.push(...buildPriceFilter(price));
   if (andConditions.length > 0) where.AND = andConditions;
 
-  const [events, total] = await Promise.all([
+  const [rawEvents, total] = await Promise.all([
     prisma.event.findMany({
       where,
       include: {
         category: { select: { slug: true, name: true, icon: true } },
         city: { select: { slug: true, name: true } },
       },
-      orderBy: { date: "asc" },
+      orderBy: [{ price: "desc" }, { date: "asc" }],
       skip: (page - 1) * limit,
-      take: limit,
+      take: limit * 2,
     }),
     prisma.event.count({ where }),
   ]);
+
+  const events = interleaveByCategory(rawEvents).slice(0, limit);
 
   // Convert BigInt fields to string for JSON serialization
   const safeEvents = events.map((e) => ({

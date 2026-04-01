@@ -130,6 +130,73 @@ export function buildPriceFilter(priceKey?: string | null): unknown[] {
   }
 }
 
+/**
+ * Interleave events by category: each consecutive event should be
+ * from a different category. Within each category, events are sorted
+ * by price desc (most expensive first), then by date asc.
+ */
+export function interleaveByCategory<T extends { category: { slug: string }; price: unknown; date: Date | string }>(
+  events: T[]
+): T[] {
+  if (events.length <= 1) return events;
+
+  // Group by category, sort each group by price desc then date asc
+  const groups = new Map<string, T[]>();
+  for (const e of events) {
+    const key = e.category.slug;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(e);
+  }
+
+  // Sort each group: expensive first, then nearest date
+  for (const arr of groups.values()) {
+    arr.sort((a, b) => {
+      const pa = Number(a.price) || 0;
+      const pb = Number(b.price) || 0;
+      if (pb !== pa) return pb - pa;
+      return new Date(a.date).getTime() - new Date(b.date).getTime();
+    });
+  }
+
+  // Round-robin pick from categories
+  const result: T[] = [];
+  const queues = [...groups.values()].sort((a, b) => b.length - a.length);
+  let lastSlug = "";
+
+  while (result.length < events.length) {
+    let picked = false;
+
+    // Try to pick from a different category than last
+    for (const q of queues) {
+      if (q.length === 0) continue;
+      if (q[0].category.slug !== lastSlug) {
+        const item = q.shift()!;
+        result.push(item);
+        lastSlug = item.category.slug;
+        picked = true;
+        break;
+      }
+    }
+
+    // Fallback: pick from any non-empty queue
+    if (!picked) {
+      for (const q of queues) {
+        if (q.length > 0) {
+          const item = q.shift()!;
+          result.push(item);
+          lastSlug = item.category.slug;
+          picked = true;
+          break;
+        }
+      }
+    }
+
+    if (!picked) break;
+  }
+
+  return result;
+}
+
 export function slugify(str: string): string {
   return transliterate(str)
     .replace(/[^a-z0-9]+/g, "-")

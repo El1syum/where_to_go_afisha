@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { buildDateFilter, buildPriceFilter } from "@/lib/utils";
+import { buildDateFilter, buildPriceFilter, interleaveByCategory } from "@/lib/utils";
 import { EventGrid } from "@/components/events/EventGrid";
 import { DateFilter } from "@/components/filters/DateFilter";
 import { JsonLd, breadcrumbJsonLd } from "@/components/seo/JsonLd";
@@ -67,17 +67,18 @@ export default async function CityPage({ params, searchParams }: CityPageProps) 
   andConditions.push(...buildPriceFilter(price));
   if (andConditions.length > 0) where.AND = andConditions;
 
-  const [events, total] = await Promise.all([
+  const [rawEvents, total] = await Promise.all([
     prisma.event.findMany({
       where,
       include: {
         category: { select: { slug: true, name: true, icon: true } },
       },
-      orderBy: { date: "asc" },
-      take: 24,
+      orderBy: [{ price: "desc" }, { date: "asc" }],
+      take: 48,
     }),
     prisma.event.count({ where }),
   ]);
+  const events = interleaveByCategory(rawEvents).slice(0, 24);
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
   const cityIn = city.namePrepositional || city.name;
