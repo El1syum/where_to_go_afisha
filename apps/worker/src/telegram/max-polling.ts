@@ -208,7 +208,13 @@ async function handleBotAdded(update: Record<string, unknown>) {
       ? `Смотрите все события города ${city.name} на портале\n${cityUrl}`
       : `Смотрите все события на портале\n${siteUrl}`;
 
-    await maxApi(`/messages?chat_id=${chatId}`, { text });
+    const res = await maxApi(`/messages?chat_id=${chatId}`, { text });
+    if (res.ok) {
+      logger.info({ chatId }, "Max welcome message sent");
+    } else {
+      const errText = await res.text();
+      logger.warn({ chatId, status: res.status, body: errText }, "Max welcome message failed");
+    }
   } catch (err) {
     logger.warn({ err }, "Could not send Max welcome message");
   }
