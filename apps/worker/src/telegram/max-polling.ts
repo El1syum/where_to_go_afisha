@@ -5,36 +5,17 @@ import { notifyAdmin } from "./notify.js";
 
 const MAX_API = "https://platform-api.max.ru";
 
-interface MaxUpdate {
-  update_type: string;
-  timestamp: number;
-  chat_id?: number;
-  message?: {
-    sender?: { user_id: number; name: string };
-    body?: { mid: string; text?: string };
+async function maxApi(endpoint: string, body?: unknown): Promise<Response> {
+  const headers: Record<string, string> = {
+    "Authorization": config.max.botToken,
   };
-  // bot_added event
-  chat?: {
-    chat_id: number;
-    type: string;
-    title: string;
-    link?: string;
-    participants_count?: number;
-  };
-  user?: {
-    user_id: number;
-    name: string;
-  };
-}
-
-interface MaxUpdatesResponse {
-  updates: MaxUpdate[];
-  marker?: number;
-}
-
-async function maxApi(endpoint: string): Promise<Response> {
+  if (body) {
+    headers["Content-Type"] = "application/json";
+  }
   return fetch(`${MAX_API}${endpoint}`, {
-    headers: { Authorization: config.max.botToken },
+    method: body ? "POST" : "GET",
+    headers,
+    body: body ? JSON.stringify(body) : undefined,
   });
 }
 
@@ -86,8 +67,8 @@ let polling = false;
 
 async function pollUpdates() {
   const endpoint = marker
-    ? `/updates?marker=${marker}&timeout=25&types=bot_added`
-    : `/updates?timeout=25&types=bot_added`;
+    ? `/updates?marker=${marker}&timeout=25`
+    : `/updates?timeout=25`;
 
   try {
     const res = await maxApi(endpoint);
@@ -97,29 +78,44 @@ async function pollUpdates() {
       return;
     }
 
-    const data = (await res.json()) as MaxUpdatesResponse;
+    const data = await res.json() as { updates?: unknown[]; marker?: number };
     if (data.marker) marker = data.marker;
 
     for (const update of data.updates || []) {
-      await handleUpdate(update);
+      const u = update as Record<string, unknown>;
+      // Log all updates for debugging
+      const updateType = u.update_type || u.type || "unknown";
+      logger.debug({ updateType, keys: Object.keys(u) }, "Max update received");
+
+      // Handle bot_added event
+      if (updateType === "bot_added") {
+        await handleBotAdded(u);
+      }
     }
   } catch (err) {
     logger.warn({ err }, "Max polling fetch error");
   }
 }
 
-async function handleUpdate(update: MaxUpdate) {
-  if (update.update_type !== "bot_added") return;
-  if (!update.chat) return;
+async function handleBotAdded(update: Record<string, unknown>) {
+  // The chat object can be at update.chat or nested differently
+  const chat = update.chat as Record<string, unknown> | undefined;
+  if (!chat) {
+    logger.info({ update }, "Max bot_added: no chat object");
+    return;
+  }
 
-  const chat = update.chat;
-  const chatId = String(chat.chat_id);
-  const title = chat.title || "";
+  const chatId = String(chat.chat_id || "");
+  const title = String(chat.title || "");
+  const chatType = String(chat.type || "");
+  const chatLink = chat.link ? String(chat.link) : null;
 
-  logger.info({ chatId, title, type: chat.type }, "Max: bot added to chat");
+  if (!chatId) {
+    logger.warn({ update }, "Max bot_added: no chat_id");
+    return;
+  }
 
-  // Only handle channels and chats
-  if (chat.type !== "channel" && chat.type !== "chat") return;
+  logger.info({ chatId, title, chatType }, "Max: bot added to chat");
 
   // Check if already exists
   const existing = await prisma.channel.findFirst({
@@ -141,7 +137,7 @@ async function handleUpdate(update: MaxUpdate) {
       name: title || "Новый канал Max",
       description: city ? `Автопостинг Max: ${city.name}` : "Город не определён",
       channelId: chatId,
-      channelUrl: chat.link || null,
+      channelUrl: chatLink,
       isActive: !!city,
       publishHourFrom: 9,
       publishHourTo: 22,
@@ -178,14 +174,7 @@ async function handleUpdate(update: MaxUpdate) {
       ? `Смотрите все события города ${city.name} на портале\n${cityUrl}`
       : `Смотрите все события на портале\n${siteUrl}`;
 
-    await fetch(`${MAX_API}/messages?chat_id=${chat.chat_id}`, {
-      method: "POST",
-      headers: {
-        Authorization: config.max.botToken,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ text }),
-    });
+    await maxApi(`/messages?chat_id=${chatId}`, { text });
   } catch (err) {
     logger.warn({ err }, "Could not send Max welcome message");
   }
@@ -203,7 +192,7 @@ export async function startMaxPolling() {
   try {
     const res = await maxApi("/me");
     if (res.ok) {
-      const me = await res.json();
+      const me = await res.json() as Record<string, unknown>;
       logger.info({ name: me.name || me.first_name, userId: me.user_id }, "Max bot connected");
     } else {
       logger.warn({ status: res.status }, "Max bot /me check failed");
@@ -215,7 +204,7 @@ export async function startMaxPolling() {
   }
 
   polling = true;
-  logger.info("Max polling started (listening for bot_added events)");
+  logger.info("Max polling started (listening for all events)");
 
   // Long-polling loop
   (async () => {
