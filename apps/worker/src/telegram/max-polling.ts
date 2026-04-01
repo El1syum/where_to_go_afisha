@@ -65,13 +65,28 @@ async function detectCity(text: string): Promise<{ id: number; slug: string; nam
 let marker: number | null = null;
 let polling = false;
 
+const POLL_INTERVAL = 15_000; // check every 15 seconds
+const FETCH_TIMEOUT = 10_000; // 10s fetch timeout
+
+function delay(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
 async function pollUpdates() {
   const endpoint = marker
-    ? `/updates?marker=${marker}&timeout=25`
-    : `/updates?timeout=25`;
+    ? `/updates?marker=${marker}&timeout=5`
+    : `/updates?timeout=5`;
 
   try {
-    const res = await maxApi(endpoint);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
+
+    const res = await fetch(`${MAX_API}${endpoint}`, {
+      headers: { Authorization: config.max.botToken },
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+
     if (!res.ok) {
       const text = await res.text();
       logger.warn({ status: res.status, body: text }, "Max polling error");
@@ -83,17 +98,19 @@ async function pollUpdates() {
 
     for (const update of data.updates || []) {
       const u = update as Record<string, unknown>;
-      // Log all updates for debugging
       const updateType = u.update_type || u.type || "unknown";
-      logger.debug({ updateType, keys: Object.keys(u) }, "Max update received");
+      logger.info({ updateType }, "Max update received");
 
-      // Handle bot_added event
       if (updateType === "bot_added") {
         await handleBotAdded(u);
       }
     }
   } catch (err) {
-    logger.warn({ err }, "Max polling fetch error");
+    // Silently handle timeouts/aborts, only log real errors
+    const msg = err instanceof Error ? err.message : String(err);
+    if (!msg.includes("abort")) {
+      logger.warn({ err: msg }, "Max polling fetch error");
+    }
   }
 }
 
@@ -213,12 +230,13 @@ export async function startMaxPolling() {
   }
 
   polling = true;
-  logger.info("Max polling started (listening for all events)");
+  logger.info("Max polling started (short-poll every 15s)");
 
-  // Long-polling loop
+  // Short-polling loop with interval
   (async () => {
     while (polling) {
       await pollUpdates();
+      if (polling) await delay(POLL_INTERVAL);
     }
   })();
 
