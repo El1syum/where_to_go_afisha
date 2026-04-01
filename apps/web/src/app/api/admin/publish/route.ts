@@ -3,6 +3,90 @@ import { prisma } from "@/lib/db";
 import { getAdmin } from "@/lib/auth";
 import { renderPostFromTemplate } from "@/lib/post-template";
 
+async function sendTelegram(channel: { channelId: string }, text: string, imageUrl: string | null): Promise<number> {
+  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+  if (!botToken) throw new Error("TELEGRAM_BOT_TOKEN not configured");
+
+  let messageId = 0;
+  let sent = false;
+
+  if (imageUrl) {
+    // Try local file
+    if (imageUrl.includes("/api/images/")) {
+      try {
+        const { readFile } = await import("fs/promises");
+        const { join } = await import("path");
+        const filename = imageUrl.split("/api/images/")[1];
+        const fileData = await readFile(join(process.env.IMAGES_DIR || "/opt/afisha/images", filename));
+        const formData = new FormData();
+        formData.append("chat_id", channel.channelId);
+        formData.append("photo", new Blob([fileData], { type: "image/jpeg" }), filename);
+        formData.append("caption", text);
+        formData.append("parse_mode", "HTML");
+        const r = await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, { method: "POST", body: formData });
+        const d = await r.json();
+        if (d.ok) { messageId = d.result.message_id; sent = true; }
+      } catch {}
+    }
+    // Try remote URL
+    if (!sent) {
+      const r = await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: channel.channelId, photo: imageUrl, caption: text, parse_mode: "HTML" }),
+      });
+      const d = await r.json();
+      if (d.ok) { messageId = d.result.message_id; sent = true; }
+    }
+  }
+
+  if (!sent) {
+    const r = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: channel.channelId, text, parse_mode: "HTML" }),
+    });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.description);
+    messageId = d.result.message_id;
+  }
+
+  return messageId;
+}
+
+async function sendMax(channel: { channelId: string }, text: string, imageUrl: string | null): Promise<number> {
+  const maxToken = process.env.MAX_BOT_TOKEN;
+  if (!maxToken) throw new Error("MAX_BOT_TOKEN not configured");
+
+  const body: Record<string, unknown> = {
+    text,
+    format: "html",
+    notify: true,
+  };
+
+  if (imageUrl) {
+    body.attachments = [{
+      type: "image",
+      payload: { url: imageUrl },
+    }];
+  }
+
+  const res = await fetch(`https://platform-api.max.ru/messages?chat_id=${channel.channelId}`, {
+    method: "POST",
+    headers: {
+      "Authorization": maxToken,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Max API ${res.status}: ${errText}`);
+  }
+
+  const data = await res.json() as { message?: { body?: { mid?: string } } };
+  return parseInt(data.message?.body?.mid || "0") || 0;
+}
+
 export async function POST(request: NextRequest) {
   const admin = await getAdmin();
   if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -23,53 +107,15 @@ export async function POST(request: NextRequest) {
 
   const text = await renderPostFromTemplate(event, channel);
 
-  const botToken = process.env.TELEGRAM_BOT_TOKEN;
-  if (!botToken) return NextResponse.json({ error: "TELEGRAM_BOT_TOKEN not configured" }, { status: 500 });
-
   try {
     let messageId = 0;
-    let sent = false;
 
-    if (event.imageUrl) {
-      // Try local file
-      if (event.imageUrl.includes("/api/images/")) {
-        try {
-          const { readFile } = await import("fs/promises");
-          const { join } = await import("path");
-          const filename = event.imageUrl.split("/api/images/")[1];
-          const fileData = await readFile(join(process.env.IMAGES_DIR || "/opt/afisha/images", filename));
-          const formData = new FormData();
-          formData.append("chat_id", channel.channelId);
-          formData.append("photo", new Blob([fileData], { type: "image/jpeg" }), filename);
-          formData.append("caption", text);
-          formData.append("parse_mode", "HTML");
-          const r = await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, { method: "POST", body: formData });
-          const d = await r.json();
-          if (d.ok) { messageId = d.result.message_id; sent = true; }
-        } catch {}
-      }
-      // Try remote URL
-      if (!sent) {
-        const r = await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ chat_id: channel.channelId, photo: event.imageUrl, caption: text, parse_mode: "HTML" }),
-        });
-        const d = await r.json();
-        if (d.ok) { messageId = d.result.message_id; sent = true; }
-      }
-    }
-    // Fallback / no image
-    if (!sent) {
-      const r = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chat_id: channel.channelId, text, parse_mode: "HTML" }),
-      });
-      const d = await r.json();
-      if (!d.ok) throw new Error(d.description);
-      messageId = d.result.message_id;
+    if (channel.platform === "MAX") {
+      messageId = await sendMax(channel, text, event.imageUrl);
+    } else {
+      messageId = await sendTelegram(channel, text, event.imageUrl);
     }
 
-    // Save
     if (existing) {
       await prisma.telegramPost.update({ where: { id: existing.id }, data: { status: "SENT", messageId, sentAt: new Date(), errorMessage: null } });
     } else {
