@@ -98,10 +98,10 @@ async function pollUpdates() {
 
     for (const update of data.updates || []) {
       const u = update as Record<string, unknown>;
-      const updateType = u.update_type || u.type || "unknown";
-      logger.info({ updateType }, "Max update received");
+      const updateType = String(u.update_type || u.type || "unknown");
+      logger.info({ updateType, chatId: u.chat_id, data: JSON.stringify(u).substring(0, 500) }, "Max update received");
 
-      if (updateType === "bot_added") {
+      if (updateType === "bot_added" || updateType === "bot_started") {
         await handleBotAdded(u);
       }
     }
