@@ -22,6 +22,9 @@ export async function PATCH(
       ...(body.sortOrder !== undefined && { sortOrder: body.sortOrder }),
       ...(body.telegramChannelId !== undefined && { telegramChannelId: body.telegramChannelId }),
       ...(body.telegramChannelUsername !== undefined && { telegramChannelUsername: body.telegramChannelUsername }),
+      ...(body.seoText !== undefined && { seoText: body.seoText }),
+      ...(body.metaTitle !== undefined && { metaTitle: body.metaTitle }),
+      ...(body.metaDescription !== undefined && { metaDescription: body.metaDescription }),
     },
   });
 

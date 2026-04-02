@@ -17,6 +17,7 @@ export default async function AdminCitiesPage() {
       isActive: true,
       sortOrder: true,
       telegramChannelId: true,
+      seoText: true,
       _count: { select: { events: true } },
     },
   });
