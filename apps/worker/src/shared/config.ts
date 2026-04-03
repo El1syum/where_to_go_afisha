@@ -13,7 +13,7 @@ export const config = {
   advcakeFeed: {
     url: process.env.ADVCAKE_FEED_URL || "",
     cronSchedule: process.env.ADVCAKE_CRON || "0 5 * * *", // daily at 05:00
-    batchSize: 1000,
+    batchSize: 2000,
   },
   admitadFeed: {
     url: process.env.ADMITAD_FEED_URL || "",
