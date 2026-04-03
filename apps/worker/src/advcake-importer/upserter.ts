@@ -48,18 +48,42 @@ async function getCategoryId(sourceId: string): Promise<number> {
   return category.id;
 }
 
-// Pre-warm city and category caches in bulk
+// Pre-warm city and category caches — bulk load from DB, create missing
 async function warmCaches(events: TransformedEvent[]) {
-  const citySlugs = [...new Set(events.map((e) => e.citySlug))];
-  const catSourceIds = [...new Set(events.map((e) => e.categorySourceId))];
+  const citySlugs = [...new Set(events.map((e) => e.citySlug))].filter((s) => !cityCache.has(s));
+  const catSourceIds = [...new Set(events.map((e) => e.categorySourceId))].filter((s) => !categoryCache.has(s));
 
-  // Bulk load cities
-  for (const slug of citySlugs) {
-    if (!cityCache.has(slug)) await getOrCreateCityId(slug);
+  // Bulk load existing cities
+  if (citySlugs.length > 0) {
+    const cities = await prisma.city.findMany({
+      where: { slug: { in: citySlugs } },
+      select: { id: true, slug: true },
+    });
+    for (const c of cities) cityCache.set(c.slug, c.id);
+
+    // Create missing cities one by one
+    for (const slug of citySlugs) {
+      if (!cityCache.has(slug)) {
+        try {
+          await getOrCreateCityId(slug);
+        } catch { /* skip */ }
+      }
+    }
   }
+
   // Bulk load categories
-  for (const sid of catSourceIds) {
-    if (!categoryCache.has(sid)) await getCategoryId(sid);
+  if (catSourceIds.length > 0) {
+    const cats = await prisma.category.findMany({
+      where: { sourceId: { in: catSourceIds } },
+      select: { id: true, sourceId: true },
+    });
+    for (const c of cats) {
+      if (c.sourceId) categoryCache.set(c.sourceId, c.id);
+    }
+
+    for (const sid of catSourceIds) {
+      if (!categoryCache.has(sid)) await getCategoryId(sid);
+    }
   }
 }
 
