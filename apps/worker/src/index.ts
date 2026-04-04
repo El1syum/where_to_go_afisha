@@ -11,6 +11,7 @@ import { runTelegramPosting } from "./telegram/scheduler.js";
 import { startBotPolling } from "./telegram/bot-polling.js";
 import { startMaxPolling } from "./telegram/max-polling.js";
 import { notifyAdmin } from "./telegram/notify.js";
+import { deduplicateEvents } from "./shared/dedup.js";
 
 async function deactivatePastEvents() {
   const result = await prisma.event.updateMany({
@@ -122,6 +123,14 @@ async function main() {
   } else {
     logger.warn("TELEGRAM_BOT_TOKEN not set, Telegram posting disabled");
   }
+
+  // Deduplication (after all imports finish — 08:00 UTC)
+  cron.schedule("0 8 * * *", async () => {
+    await deduplicateEvents().catch((e) =>
+      logger.error(e, "Deduplication failed")
+    );
+  });
+  logger.info("Deduplication scheduled: 0 8 * * *");
 
   // Cleanup past events
   cron.schedule(config.cleanup.cronSchedule, async () => {
