@@ -57,7 +57,7 @@ services:
     image: ghcr.io/el1syum/where_to_go_afisha/worker:latest
     restart: always
     environment:
-      DATABASE_URL: postgresql://afisha:${DB_PASSWORD}@postgres:5432/afisha?connection_limit=15&pool_timeout=30
+      DATABASE_URL: "postgresql://afisha:${DB_PASSWORD}@postgres:5432/afisha?connection_limit=15&pool_timeout=30"
       REDIS_URL: redis://redis:6379
       XML_FEED_URL: ${XML_FEED_URL}
       ADVCAKE_FEED_URL: ${ADVCAKE_FEED_URL:-}

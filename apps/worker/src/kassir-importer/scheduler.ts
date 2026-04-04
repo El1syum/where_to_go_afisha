@@ -49,7 +49,8 @@ export async function runKassirImport(localFilePath?: string) {
       cleanupFn = cleanup;
     }
 
-    let batch: TransformedEvent[] = [];
+    // Collect transformed events synchronously during parsing
+    const collected: TransformedEvent[] = [];
 
     const { totalOffers } = await parseKassirStream(inputStream, async (rawOffer) => {
       const transformed = transformKassirOffer(rawOffer);
@@ -57,22 +58,13 @@ export async function runKassirImport(localFilePath?: string) {
         totalSkipped++;
         return;
       }
-
       seenExternalIds.add(transformed.externalId);
-      batch.push(transformed);
-
-      if (batch.length >= config.kassirFeed.batchSize) {
-        const result = await upsertBatch(batch);
-        totalNew += result.newCount;
-        totalUpdated += result.updatedCount;
-        totalSkipped += result.skippedCount;
-        totalErrors += result.errorCount;
-        allErrors.push(...result.errors);
-        batch = [];
-      }
+      collected.push(transformed);
     });
 
-    if (batch.length > 0) {
+    // Process collected events in sequential batches
+    for (let i = 0; i < collected.length; i += config.kassirFeed.batchSize) {
+      const batch = collected.slice(i, i + config.kassirFeed.batchSize);
       const result = await upsertBatch(batch);
       totalNew += result.newCount;
       totalUpdated += result.updatedCount;
@@ -82,13 +74,22 @@ export async function runKassirImport(localFilePath?: string) {
     }
 
     if (seenExternalIds.size > 50) {
-      const deactivated = await prisma.$executeRawUnsafe(`
-        UPDATE "Event" SET "isActive" = false
-        WHERE source = 'EXTERNAL_API' AND "isActive" = true
-          AND "externalId" NOT IN (${[...seenExternalIds].map(id => `'${id.replace(/'/g, "''")}'`).join(",")})
-      `);
-      if (typeof deactivated === "number" && deactivated > 0) {
-        logger.info(`Kassir: deactivated ${deactivated} events no longer in feed`);
+      const activeEvents = await prisma.event.findMany({
+        where: { source: "EXTERNAL_API", isActive: true },
+        select: { id: true, externalId: true },
+      });
+      const toDeactivate = activeEvents
+        .filter((e) => !seenExternalIds.has(e.externalId))
+        .map((e) => e.id);
+
+      if (toDeactivate.length > 0) {
+        for (let i = 0; i < toDeactivate.length; i += 5000) {
+          await prisma.event.updateMany({
+            where: { id: { in: toDeactivate.slice(i, i + 5000) } },
+            data: { isActive: false },
+          });
+        }
+        logger.info(`Kassir: deactivated ${toDeactivate.length} events no longer in feed`);
       }
     }
 
@@ -115,19 +116,23 @@ export async function runKassirImport(localFilePath?: string) {
     );
   } catch (err) {
     const duration = Math.round((Date.now() - startTime) / 1000);
-    await prisma.importLog.update({
-      where: { id: importLog.id },
-      data: {
-        status: "FAILED",
-        errorItems: totalErrors + 1,
-        errors: [
-          ...allErrors.slice(0, 99),
-          { externalId: "FATAL", error: err instanceof Error ? err.message : String(err) },
-        ],
-        duration,
-        finishedAt: new Date(),
-      },
-    });
+    try {
+      await prisma.importLog.update({
+        where: { id: importLog.id },
+        data: {
+          status: "FAILED",
+          errorItems: totalErrors + 1,
+          errors: [
+            ...allErrors.slice(0, 99),
+            { externalId: "FATAL", error: err instanceof Error ? err.message : String(err) },
+          ],
+          duration,
+          finishedAt: new Date(),
+        },
+      });
+    } catch (updateErr) {
+      logger.error(updateErr, "Failed to update import log to FAILED status");
+    }
     logger.error(err, "Kassir import failed");
     throw err;
   } finally {

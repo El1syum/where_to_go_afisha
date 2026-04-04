@@ -52,8 +52,10 @@ export async function runXmlImport(localFilePath?: string) {
       cleanupFn = cleanup;
     }
 
-    // Batch buffer
-    let batch: TransformedEvent[] = [];
+    // Collect transformed events synchronously during parsing
+    // (SAX parser doesn't await async callbacks — doing DB work
+    // inside onOffer causes thousands of concurrent queries)
+    const collected: TransformedEvent[] = [];
 
     const { totalOffers } = await parseXmlStream(inputStream, async (rawOffer) => {
       const transformed = transformOffer(rawOffer);
@@ -61,23 +63,13 @@ export async function runXmlImport(localFilePath?: string) {
         totalSkipped++;
         return;
       }
-
       seenExternalIds.add(transformed.externalId);
-      batch.push(transformed);
-
-      if (batch.length >= config.xmlFeed.batchSize) {
-        const result = await upsertBatch(batch);
-        totalNew += result.newCount;
-        totalUpdated += result.updatedCount;
-        totalSkipped += result.skippedCount;
-        totalErrors += result.errorCount;
-        allErrors.push(...result.errors);
-        batch = [];
-      }
+      collected.push(transformed);
     });
 
-    // Process remaining batch
-    if (batch.length > 0) {
+    // Process collected events in sequential batches
+    for (let i = 0; i < collected.length; i += config.xmlFeed.batchSize) {
+      const batch = collected.slice(i, i + config.xmlFeed.batchSize);
       const result = await upsertBatch(batch);
       totalNew += result.newCount;
       totalUpdated += result.updatedCount;
@@ -88,13 +80,22 @@ export async function runXmlImport(localFilePath?: string) {
 
     // Deactivate events no longer in the feed (skip if too few parsed — possible partial feed)
     if (seenExternalIds.size > 100) {
-      const deactivated = await prisma.$executeRawUnsafe(`
-        UPDATE "Event" SET "isActive" = false
-        WHERE source = 'YANDEX_XML' AND "isActive" = true
-          AND "externalId" NOT IN (${[...seenExternalIds].map(id => `'${id.replace(/'/g, "''")}'`).join(",")})
-      `);
-      if (deactivated > 0) {
-        logger.info(`Deactivated ${deactivated} events no longer in feed`);
+      const activeEvents = await prisma.event.findMany({
+        where: { source: "YANDEX_XML", isActive: true },
+        select: { id: true, externalId: true },
+      });
+      const toDeactivate = activeEvents
+        .filter((e) => !seenExternalIds.has(e.externalId))
+        .map((e) => e.id);
+
+      if (toDeactivate.length > 0) {
+        for (let i = 0; i < toDeactivate.length; i += 5000) {
+          await prisma.event.updateMany({
+            where: { id: { in: toDeactivate.slice(i, i + 5000) } },
+            data: { isActive: false },
+          });
+        }
+        logger.info(`Deactivated ${toDeactivate.length} events no longer in feed`);
       }
     }
 
@@ -130,20 +131,24 @@ export async function runXmlImport(localFilePath?: string) {
   } catch (err) {
     const duration = Math.round((Date.now() - startTime) / 1000);
 
-    await prisma.importLog.update({
-      where: { id: importLog.id },
-      data: {
-        status: "FAILED",
-        totalItems: 0,
-        errorItems: totalErrors + 1,
-        errors: [
-          ...allErrors.slice(0, 99),
-          { externalId: "FATAL", error: err instanceof Error ? err.message : String(err) },
-        ],
-        duration,
-        finishedAt: new Date(),
-      },
-    });
+    try {
+      await prisma.importLog.update({
+        where: { id: importLog.id },
+        data: {
+          status: "FAILED",
+          totalItems: 0,
+          errorItems: totalErrors + 1,
+          errors: [
+            ...allErrors.slice(0, 99),
+            { externalId: "FATAL", error: err instanceof Error ? err.message : String(err) },
+          ],
+          duration,
+          finishedAt: new Date(),
+        },
+      });
+    } catch (updateErr) {
+      logger.error(updateErr, "Failed to update import log to FAILED status");
+    }
 
     logger.error(err, "XML import failed");
     throw err;
