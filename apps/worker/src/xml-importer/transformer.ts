@@ -70,6 +70,12 @@ export function transformOffer(raw: RawOffer): TransformedEvent | null {
   const date = parseDateMoscow(raw.date);
   if (!date) return null;
 
+  // Skip events at foreign venues miscategorized under Russian cities
+  const placeLower = (raw.place || "").toLowerCase();
+  const nameLower = raw.name.toLowerCase();
+  const foreignMarkers = ["оаэ", "абу-даби", "дубай", "dubai", "abu dhabi", "турция", "turkey", "таиланд", "thailand"];
+  if (foreignMarkers.some((m) => placeLower.includes(m) || nameLower.includes(m))) return null;
+
   // Hide price for unavailable offers (e.g. kassir available="false")
   const isAvailable = raw.available !== "false";
   const price = isAvailable && raw.price ? parseFloat(raw.price) : null;
