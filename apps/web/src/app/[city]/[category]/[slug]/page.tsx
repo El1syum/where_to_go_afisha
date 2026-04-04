@@ -10,6 +10,7 @@ import { ShareButtons } from "@/components/events/ShareButtons";
 import { EventCard } from "@/components/events/EventCard";
 import { EventChannels } from "@/components/events/EventChannels";
 import { Reviews } from "@/components/events/Reviews";
+import { YandexMusic } from "@/components/events/YandexMusic";
 export const revalidate = 3600;
 
 interface EventPageProps {
@@ -171,6 +172,13 @@ export default async function EventPage({ params }: EventPageProps) {
               ))}
             </div>
           )}
+
+          {/* Яндекс Музыка — виджет артиста для концертов */}
+          <YandexMusic
+            title={event.title}
+            place={event.place}
+            categorySlug={event.category.slug}
+          />
 
           <AdInContent />
 
