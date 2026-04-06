@@ -9,12 +9,19 @@ interface YandexMusicArtist {
 
 /**
  * Extract artist name from concert event title.
- * Removes venue in parentheses, text after "." or ":", common prefixes.
+ * Handles: venue in parens, "и Band" suffix, delimiters, prefixes, HTML entities.
  */
 export function extractArtistName(title: string, place: string | null): string | null {
   let name = title;
 
-  // Remove venue in parentheses (exact match or at the end)
+  // Decode HTML entities (&quot; etc.)
+  name = name
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">");
+
+  // Remove venue in parentheses (exact match)
   if (place) {
     const escaped = place.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     name = name.replace(new RegExp(`\\s*\\(${escaped}\\)\\s*$`, "i"), "");
@@ -23,17 +30,34 @@ export function extractArtistName(title: string, place: string | null): string |
   // Remove any remaining parenthesized suffix
   name = name.replace(/\s*\([^)]*\)\s*$/, "");
 
-  // Take text before first "." or ":" (artist is usually before delimiter)
+  // Take text before first ".", ":" or " - " (artist is before delimiter)
   name = name.replace(/[.:]\s+.*$/, "");
+  name = name.replace(/\s+-\s+.*$/, "");
 
   // Remove common prefixes
   name = name
     .replace(/^Билеты на\s+/i, "")
     .replace(/^Концерт\s+/i, "")
-    .replace(/^Шоу\s+/i, "");
+    .replace(/^Шоу\s+/i, "")
+    .replace(/^Кавер-шоу\s+/i, "")
+    .replace(/^Симфо-шоу\s+/i, "")
+    .replace(/^Группа\s+/i, "")
+    .replace(/^ВИА\s+/i, "")
+    .replace(/^Проект\s+/i, "");
 
-  // Remove quotes
-  name = name.replace(/[«»""„"]/g, "").trim();
+  // Remove "и Group/Band" suffix: "Бутусов и Орден Славы" → "Бутусов"
+  // Check if text after "и" contains band-like words anywhere
+  const andIdx = name.search(/\s+и\s+/i);
+  if (andIdx > 0) {
+    const afterAnd = name.slice(andIdx).toLowerCase();
+    const bandWords = ["группа", "оркестр", "бэнд", "бенд", "band", "ансамбль", "проект", "шоу", "квартет", "трио", "дуэт"];
+    if (bandWords.some((w) => afterAnd.includes(w))) {
+      name = name.slice(0, andIdx);
+    }
+  }
+
+  // Remove quotes (Unicode + ASCII)
+  name = name.replace(/[«»""„"'"]/g, "").trim();
 
   // Skip if too short/long
   if (name.length < 2 || name.length > 60) return null;
@@ -45,6 +69,9 @@ export function extractArtistName(title: string, place: string | null): string |
     "саундтрек", "романтич", "джаз", "хиты", "сборник",
     "вечер ", "музыка", "абонемент", "органн", "симфони",
     "филармони", "день ", "ночь ", "песни", "песня", "рандеву",
+    "спектакль", "вечеринка", "погружение", "дефиле", "гала ",
+    "симфо-", "караоке", "международн", "мюзикл", "балет",
+    " век",
   ];
   if (skipWords.some((w) => lower.includes(w))) return null;
 
