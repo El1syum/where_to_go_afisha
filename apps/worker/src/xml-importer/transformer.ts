@@ -19,6 +19,7 @@ import { extractCitySlug, extractOriginalUrl } from "./city-extractor.js";
 export interface TransformedEvent {
   externalId: string;
   citySlug: string;
+  cityName?: string; // Original Russian city name (when available from feed)
   categorySourceId: string;
   slug: string;
   title: string;

@@ -9,16 +9,30 @@ export function resetCaches() {
   categoryCache.clear();
 }
 
-async function getOrCreateCityId(slug: string): Promise<number> {
+async function getOrCreateCityId(slug: string, cityName?: string): Promise<number> {
   const cached = cityCache.get(slug);
   if (cached) return cached;
 
-  const city = await prisma.city.upsert({
+  const hasRussian = !!(cityName && /[а-яА-ЯёЁ]/.test(cityName));
+  const displayName = hasRussian ? cityName! : slug;
+
+  let city = await prisma.city.findUnique({
     where: { slug },
-    update: {},
-    create: { slug, name: slug, isActive: false },
-    select: { id: true },
+    select: { id: true, name: true },
   });
+
+  if (!city) {
+    city = await prisma.city.create({
+      data: { slug, name: displayName, isActive: false },
+      select: { id: true, name: true },
+    });
+  } else if (hasRussian && city.name === slug) {
+    // Existing city had slug-as-name, backfill real Russian name
+    await prisma.city.update({
+      where: { id: city.id },
+      data: { name: displayName },
+    });
+  }
 
   cityCache.set(slug, city.id);
   return city.id;
@@ -62,7 +76,7 @@ export async function upsertBatch(events: TransformedEvent[]): Promise<UpsertRes
 
   for (const event of events) {
     try {
-      const cityId = await getOrCreateCityId(event.citySlug);
+      const cityId = await getOrCreateCityId(event.citySlug, event.cityName);
       const categoryId = await getCategoryId(event.categorySourceId);
 
       const existing = await prisma.event.findUnique({

@@ -10,16 +10,29 @@ export function resetCaches() {
   categoryCache.clear();
 }
 
-async function getOrCreateCityId(slug: string): Promise<number> {
+async function getOrCreateCityId(slug: string, cityName?: string): Promise<number> {
   const cached = cityCache.get(slug);
   if (cached) return cached;
 
-  const city = await prisma.city.upsert({
+  const hasRussian = !!(cityName && /[а-яА-ЯёЁ]/.test(cityName));
+  const displayName = hasRussian ? cityName! : slug;
+
+  let city = await prisma.city.findUnique({
     where: { slug },
-    update: {},
-    create: { slug, name: slug, isActive: false },
-    select: { id: true },
+    select: { id: true, name: true },
   });
+
+  if (!city) {
+    city = await prisma.city.create({
+      data: { slug, name: displayName, isActive: false },
+      select: { id: true, name: true },
+    });
+  } else if (hasRussian && city.name === slug) {
+    await prisma.city.update({
+      where: { id: city.id },
+      data: { name: displayName },
+    });
+  }
 
   cityCache.set(slug, city.id);
   return city.id;
@@ -50,22 +63,36 @@ async function getCategoryId(sourceId: string): Promise<number> {
 
 // Pre-warm city and category caches — bulk load from DB, create missing
 async function warmCaches(events: TransformedEvent[]) {
-  const citySlugs = [...new Set(events.map((e) => e.citySlug))].filter((s) => !cityCache.has(s));
+  // Map slug → first-seen Russian cityName (for backfilling and creation)
+  const slugToName = new Map<string, string | undefined>();
+  for (const e of events) {
+    if (!slugToName.has(e.citySlug)) slugToName.set(e.citySlug, e.cityName);
+  }
+
+  const citySlugs = [...slugToName.keys()].filter((s) => !cityCache.has(s));
   const catSourceIds = [...new Set(events.map((e) => e.categorySourceId))].filter((s) => !categoryCache.has(s));
 
   // Bulk load existing cities
   if (citySlugs.length > 0) {
     const cities = await prisma.city.findMany({
       where: { slug: { in: citySlugs } },
-      select: { id: true, slug: true },
+      select: { id: true, slug: true, name: true },
     });
-    for (const c of cities) cityCache.set(c.slug, c.id);
+
+    // Backfill Russian names for cities that still have slug-as-name
+    for (const c of cities) {
+      cityCache.set(c.slug, c.id);
+      const cityName = slugToName.get(c.slug);
+      if (cityName && /[а-яА-ЯёЁ]/.test(cityName) && c.name === c.slug) {
+        await prisma.city.update({ where: { id: c.id }, data: { name: cityName } }).catch(() => {});
+      }
+    }
 
     // Create missing cities one by one
     for (const slug of citySlugs) {
       if (!cityCache.has(slug)) {
         try {
-          await getOrCreateCityId(slug);
+          await getOrCreateCityId(slug, slugToName.get(slug));
         } catch { /* skip */ }
       }
     }

@@ -79,6 +79,7 @@ export function transformAdvCakeOffer(raw: RawAdvCakeOffer): TransformedEvent | 
   return {
     externalId: raw.id,
     citySlug,
+    cityName: raw.region.trim(),
     categorySourceId,
     slug: slugify(raw.name, raw.id),
     title: raw.name,

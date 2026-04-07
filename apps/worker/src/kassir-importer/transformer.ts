@@ -91,6 +91,7 @@ export function transformKassirOffer(raw: RawKassirOffer): TransformedEvent | nu
   return {
     externalId: raw.id,
     citySlug,
+    cityName: raw.city.trim(),
     categorySourceId,
     slug: slugify(raw.name, raw.id),
     title: raw.name,
