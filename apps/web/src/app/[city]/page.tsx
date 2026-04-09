@@ -199,6 +199,7 @@ export default async function CityPage({ params, searchParams }: CityPageProps) 
         <Collections cityId={city.id} citySlug={citySlug} />
       </Suspense>
 
+      <h2 className="mb-4 text-2xl font-bold text-gray-900">Все афиши</h2>
       <EventGrid events={events} citySlug={citySlug} total={total} />
 
       {city.seoText && (
