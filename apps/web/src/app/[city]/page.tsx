@@ -78,12 +78,19 @@ export default async function CityPage({ params, searchParams }: CityPageProps) 
   andConditions.push(...buildPriceFilter(price));
   if (andConditions.length > 0) where.AND = andConditions;
 
-  // Fetch top events per category (round-robin ready), then interleave
+  // Fetch top events per category (round-robin ready), then interleave.
+  // Sort: paid+available first (by price DESC), then free/unavailable at the end.
   const perCategory = 6; // top N per category by price
   const topPerCategoryIds = await prisma.$queryRawUnsafe<Array<{ id: number }>>(`
     SELECT id FROM (
       SELECT e."id", e."categoryId",
-        ROW_NUMBER() OVER (PARTITION BY e."categoryId" ORDER BY e."price" DESC NULLS LAST, e."date" ASC) as rn
+        ROW_NUMBER() OVER (
+          PARTITION BY e."categoryId"
+          ORDER BY
+            (CASE WHEN e."isAvailable" = true AND e."price" IS NOT NULL AND e."price" > 0 THEN 0 ELSE 1 END),
+            e."price" DESC NULLS LAST,
+            e."date" ASC
+        ) as rn
       FROM "Event" e
       WHERE e."cityId" = $1
         AND e."isActive" = true AND e."isApproved" = true
@@ -108,7 +115,12 @@ export default async function CityPage({ params, searchParams }: CityPageProps) 
 
   type EventWithCategory = (typeof rawEvents)[number];
 
-  // Interleave: on each step pick the most expensive event from a different category
+  // Interleave: paid+available first, then free/unavailable at the end.
+  const isPaid = (e: EventWithCategory) =>
+    e.isAvailable && e.price != null && Number(e.price) > 0;
+  const priceScore = (e: EventWithCategory) =>
+    isPaid(e) ? Number(e.price) : -1;
+
   const groups = new Map<string, EventWithCategory[]>();
   for (const e of rawEvents) {
     const key = e.category.slug;
@@ -117,27 +129,42 @@ export default async function CityPage({ params, searchParams }: CityPageProps) 
   }
   for (const arr of groups.values()) {
     arr.sort((a, b) => {
-      const pa = Number(a.price) || 0;
-      const pb = Number(b.price) || 0;
-      return pb !== pa ? pb - pa : new Date(a.date).getTime() - new Date(b.date).getTime();
+      // Paid before free within a category
+      const pa = isPaid(a) ? 0 : 1;
+      const pb = isPaid(b) ? 0 : 1;
+      if (pa !== pb) return pa - pb;
+      const sa = priceScore(a);
+      const sb = priceScore(b);
+      if (sa !== sb) return sb - sa;
+      return new Date(a.date).getTime() - new Date(b.date).getTime();
     });
   }
   const events: EventWithCategory[] = [];
   let lastSlug = "";
   while (events.length < 24) {
-    // Find the most expensive head across all queues, excluding lastSlug
+    // Prefer paid heads first (any category). Only fall back to free when
+    // no paid events remain in any queue.
     let bestQueue: EventWithCategory[] | null = null;
-    let bestPrice = -1;
+    let bestScore = -Infinity;
+    let anyPaid = false;
+    for (const q of groups.values()) {
+      if (q.length === 0) continue;
+      if (isPaid(q[0])) anyPaid = true;
+    }
     for (const q of groups.values()) {
       if (q.length === 0) continue;
       if (q[0].category.slug === lastSlug) continue;
-      const p = Number(q[0].price) || 0;
-      if (p > bestPrice) { bestPrice = p; bestQueue = q; }
+      if (anyPaid && !isPaid(q[0])) continue;
+      const s = priceScore(q[0]);
+      if (s > bestScore) { bestScore = s; bestQueue = q; }
     }
-    // Fallback: if all remaining are same category, pick anyway
+    // Fallback: all remaining heads are same category — pick anyway (respecting paid-first)
     if (!bestQueue) {
       for (const q of groups.values()) {
-        if (q.length > 0) { bestQueue = q; break; }
+        if (q.length === 0) continue;
+        if (anyPaid && !isPaid(q[0])) continue;
+        bestQueue = q;
+        break;
       }
     }
     if (!bestQueue) break;

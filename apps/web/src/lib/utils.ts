@@ -132,15 +132,19 @@ export function buildPriceFilter(priceKey?: string | null): unknown[] {
 
 /**
  * Interleave events by category: each consecutive event should be
- * from a different category. Within each category, events are sorted
- * by price desc (most expensive first), then by date asc.
+ * from a different category. Paid+available events go first (sorted
+ * by price desc), free/unavailable go at the end.
  */
-export function interleaveByCategory<T extends { category: { slug: string }; price: unknown; date: Date | string }>(
+export function interleaveByCategory<T extends { category: { slug: string }; price: unknown; date: Date | string; isAvailable?: boolean }>(
   events: T[]
 ): T[] {
   if (events.length <= 1) return events;
 
-  // Group by category, sort each group by price desc then date asc
+  const isPaid = (e: T) =>
+    e.isAvailable !== false && e.price != null && Number(e.price) > 0;
+  const priceScore = (e: T) => (isPaid(e) ? Number(e.price) : -1);
+
+  // Group by category
   const groups = new Map<string, T[]>();
   for (const e of events) {
     const key = e.category.slug;
@@ -148,34 +152,48 @@ export function interleaveByCategory<T extends { category: { slug: string }; pri
     groups.get(key)!.push(e);
   }
 
-  // Sort each group: expensive first, then nearest date
+  // Sort each group: paid first (by price desc), then free, then by date asc
   for (const arr of groups.values()) {
     arr.sort((a, b) => {
-      const pa = Number(a.price) || 0;
-      const pb = Number(b.price) || 0;
-      if (pb !== pa) return pb - pa;
+      const pa = isPaid(a) ? 0 : 1;
+      const pb = isPaid(b) ? 0 : 1;
+      if (pa !== pb) return pa - pb;
+      const sa = priceScore(a);
+      const sb = priceScore(b);
+      if (sa !== sb) return sb - sa;
       return new Date(a.date).getTime() - new Date(b.date).getTime();
     });
   }
 
-  // Pick most expensive from a different category each step
+  // Pick most expensive head from a different category, paid-first
   const result: T[] = [];
   let lastSlug = "";
 
   while (result.length < events.length) {
+    // Is there a paid event at any queue head?
+    let anyPaidHead = false;
+    for (const q of groups.values()) {
+      if (q.length > 0 && isPaid(q[0])) { anyPaidHead = true; break; }
+    }
+
     let bestQueue: T[] | null = null;
-    let bestPrice = -1;
+    let bestScore = -Infinity;
 
     for (const q of groups.values()) {
       if (q.length === 0) continue;
       if (q[0].category.slug === lastSlug) continue;
-      const p = Number(q[0].price) || 0;
-      if (p > bestPrice) { bestPrice = p; bestQueue = q; }
+      if (anyPaidHead && !isPaid(q[0])) continue;
+      const s = priceScore(q[0]);
+      if (s > bestScore) { bestScore = s; bestQueue = q; }
     }
 
+    // Fallback: same-category allowed (respecting paid-first)
     if (!bestQueue) {
       for (const q of groups.values()) {
-        if (q.length > 0) { bestQueue = q; break; }
+        if (q.length === 0) continue;
+        if (anyPaidHead && !isPaid(q[0])) continue;
+        bestQueue = q;
+        break;
       }
     }
 

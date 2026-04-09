@@ -74,7 +74,11 @@ export function transformOffer(raw: RawOffer): TransformedEvent | null {
   // Skip events at foreign venues miscategorized under Russian cities
   const placeLower = (raw.place || "").toLowerCase();
   const nameLower = raw.name.toLowerCase();
-  const foreignMarkers = ["оаэ", "абу-даби", "дубай", "dubai", "abu dhabi", "турция", "turkey", "таиланд", "thailand"];
+  const foreignMarkers = [
+    "оаэ", "абу-даби", "дубай", "dubai", "abu dhabi",
+    "турция", "turkey", "таиланд", "thailand",
+    "саудовская аравия", "saudi arabia", "эр-рияд", "riyadh",
+  ];
   if (foreignMarkers.some((m) => placeLower.includes(m) || nameLower.includes(m))) return null;
 
   // Hide price for unavailable offers (e.g. kassir available="false")
