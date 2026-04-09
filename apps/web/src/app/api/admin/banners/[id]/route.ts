@@ -3,7 +3,7 @@ import { unlink } from "fs/promises";
 import { join } from "path";
 import { prisma } from "@/lib/db";
 import { getAdmin } from "@/lib/auth";
-import { saveBannerFile } from "../route";
+import { saveBannerFile } from "@/lib/banner-upload";
 
 const IMAGES_DIR = process.env.IMAGES_DIR || "/opt/afisha/images";
 
