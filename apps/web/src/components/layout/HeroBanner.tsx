@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
-import Link from "next/link";
 
 interface HeroBannerProps {
   citySlug: string;
+  /** Per-slide URLs loaded from Settings (banner_url_1..5). Empty/null = not clickable. */
+  links?: (string | null)[];
 }
 
 const SLIDES = [
@@ -36,7 +37,7 @@ const SLIDES = [
   },
 ];
 
-export function HeroBanner({ citySlug }: HeroBannerProps) {
+export function HeroBanner({ citySlug: _citySlug, links = [] }: HeroBannerProps) {
   const [current, setCurrent] = useState(0);
   const [prev, setPrev] = useState<number | null>(null);
   const [animating, setAnimating] = useState(false);
@@ -61,8 +62,12 @@ export function HeroBanner({ citySlug }: HeroBannerProps) {
     return () => clearInterval(timer);
   }, [next]);
 
-  return (
-    <div className="relative mb-8 overflow-hidden rounded-2xl" style={{ minHeight: 320 }}>
+  const currentLink = links[current]?.trim() || null;
+  const isClickable = !!currentLink;
+  const isExternal = isClickable && /^https?:\/\//i.test(currentLink!);
+
+  const content = (
+    <>
       {/* Current + previous image only (not all 5) */}
       {prev !== null && (
         <Image
@@ -103,24 +108,18 @@ export function HeroBanner({ citySlug }: HeroBannerProps) {
         >
           {SLIDES[current].subtitle}
         </p>
-        <div
-          key={`cta-${current}`}
-          className="mb-6 animate-[fadeSlideUp_0.6s_0.2s_ease-out_both]"
-        >
-          {/* <Link
-            href={`/${citySlug}`}
-            className="inline-block rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
-          >
-            Выбрать событие
-          </Link> */}
-        </div>
+        <div key={`cta-${current}`} className="mb-6" />
 
-        {/* Dots indicator */}
+        {/* Dots indicator — stopPropagation so clicks don't trigger the wrapping link */}
         <div className="flex gap-2">
           {SLIDES.map((_, i) => (
             <button
               key={i}
-              onClick={() => goTo(i)}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                goTo(i);
+              }}
               className={`h-2 rounded-full transition-all duration-300 ${
                 i === current ? "w-6 bg-white" : "w-2 bg-white/50 hover:bg-white/70"
               }`}
@@ -129,6 +128,30 @@ export function HeroBanner({ citySlug }: HeroBannerProps) {
           ))}
         </div>
       </div>
+    </>
+  );
+
+  const wrapperClasses = `relative mb-8 block overflow-hidden rounded-2xl ${
+    isClickable ? "cursor-pointer" : ""
+  }`;
+
+  if (isClickable) {
+    return (
+      <a
+        href={currentLink!}
+        target={isExternal ? "_blank" : undefined}
+        rel={isExternal ? "noopener noreferrer" : undefined}
+        className={wrapperClasses}
+        style={{ minHeight: 320 }}
+      >
+        {content}
+      </a>
+    );
+  }
+
+  return (
+    <div className={wrapperClasses} style={{ minHeight: 320 }}>
+      {content}
     </div>
   );
 }

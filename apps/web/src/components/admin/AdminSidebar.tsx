@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { href: "/admin/reviews", label: "Отзывы", icon: "💬" },
   { href: "/admin/channels", label: "Каналы", icon: "📡" },
   { href: "/admin/telegram", label: "Публикации", icon: "📨" },
+  { href: "/admin/banners", label: "Баннеры", icon: "🖼️" },
   { href: "/admin/import", label: "Импорт", icon: "📥" },
 ];
 
