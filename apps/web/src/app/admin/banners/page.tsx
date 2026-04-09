@@ -8,19 +8,22 @@ export const dynamic = "force-dynamic";
 export default async function AdminBannersPage() {
   await requireAdmin();
 
-  const settings = await prisma.setting.findMany({
-    where: { key: { in: ["banner_url_1", "banner_url_2", "banner_url_3", "banner_url_4", "banner_url_5"] } },
-    select: { key: true, value: true },
-  });
-
-  const initial: (string | null)[] = [1, 2, 3, 4, 5].map(
-    (i) => settings.find((s) => s.key === `banner_url_${i}`)?.value || null
-  );
+  const [banners, cities] = await Promise.all([
+    prisma.banner.findMany({
+      orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+      include: { city: { select: { id: true, slug: true, name: true } } },
+    }),
+    prisma.city.findMany({
+      where: { isActive: true },
+      select: { id: true, slug: true, name: true },
+      orderBy: { name: "asc" },
+    }),
+  ]);
 
   return (
     <AdminShell>
       <h1 className="mb-6 text-2xl font-bold">Баннеры</h1>
-      <BannersEditor initial={initial} />
+      <BannersEditor initial={banners} cities={cities} />
     </AdminShell>
   );
 }

@@ -29,6 +29,7 @@ model City {
   events                Event[]
   telegramPosts         TelegramPost[]
   channels              Channel[]
+  banners               Banner[]
 
   @@index([isActive, sortOrder])
 }
@@ -206,6 +207,27 @@ enum ImportStatus {
   RUNNING
   COMPLETED
   FAILED
+}
+
+// =====================
+// БАННЕРЫ (hero slider на главных страницах)
+// =====================
+model Banner {
+  id        Int      @id @default(autoincrement())
+  title     String
+  subtitle  String
+  imageUrl  String                             // /api/images/banners/... or /banner/*.jpg
+  linkUrl   String?                            // null = non-clickable
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  cityId    Int?                               // null = global (all cities)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  city      City?    @relation(fields: [cityId], references: [id])
+
+  @@index([isActive, sortOrder])
+  @@index([cityId, isActive])
 }
 
 // =====================

@@ -60,14 +60,15 @@ export default async function CityPage({ params, searchParams }: CityPageProps) 
 
   if (!city) notFound();
 
-  // Load hero banner URLs from settings
-  const bannerSettings = await prisma.setting.findMany({
-    where: { key: { in: ["banner_url_1", "banner_url_2", "banner_url_3", "banner_url_4", "banner_url_5"] } },
-    select: { key: true, value: true },
+  // Load active hero banners: global (cityId=null) + city-specific
+  const bannersRaw = await prisma.banner.findMany({
+    where: {
+      isActive: true,
+      OR: [{ cityId: null }, { cityId: city.id }],
+    },
+    orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+    select: { id: true, title: true, subtitle: true, imageUrl: true, linkUrl: true },
   });
-  const bannerLinks: (string | null)[] = [1, 2, 3, 4, 5].map(
-    (i) => bannerSettings.find((s) => s.key === `banner_url_${i}`)?.value || null
-  );
 
   const dateRange = buildDateFilter(dateFilter, exactDate);
 
@@ -194,7 +195,7 @@ export default async function CityPage({ params, searchParams }: CityPageProps) 
         ])}
       />
 
-      <HeroBanner citySlug={citySlug} links={bannerLinks} />
+      <HeroBanner citySlug={citySlug} banners={bannersRaw} />
 
       <h1 className="mb-6 text-2xl font-bold text-gray-900 md:text-3xl">
         Куда сходить в {cityIn}
