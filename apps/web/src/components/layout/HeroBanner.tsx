@@ -72,7 +72,7 @@ export function HeroBanner({ citySlug: _citySlug, banners }: HeroBannerProps) {
           className="object-cover transition-opacity duration-700 ease-in-out"
           style={{ opacity: 0, zIndex: 1 }}
           sizes="(max-width: 1280px) 100vw, 1200px"
-          unoptimized={prevSlide.imageUrl.startsWith("/api/images/")}
+          unoptimized
         />
       )}
       <Image
@@ -84,7 +84,7 @@ export function HeroBanner({ citySlug: _citySlug, banners }: HeroBannerProps) {
         style={{ opacity: 1, transform: "scale(1)", zIndex: 2 }}
         sizes="(max-width: 1280px) 100vw, 1200px"
         priority={current === 0}
-        unoptimized={slide.imageUrl.startsWith("/api/images/")}
+        unoptimized
       />
 
       {/* Dark gradient overlay */}

@@ -36,7 +36,38 @@ export async function POST(request: NextRequest) {
       cityId: body.cityId,
       categoryId: body.categoryId,
     },
+    include: {
+      city: { select: { slug: true } },
+      category: { select: { slug: true } },
+    },
   });
 
-  return NextResponse.json({ event, ok: true });
+  // Optionally create a city-scoped banner pointing to this event
+  let banner = null;
+  if (body.createBanner && event.imageUrl) {
+    const dateStr = new Date(event.date).toLocaleDateString("ru-RU", {
+      day: "numeric",
+      month: "long",
+      timeZone: "Europe/Moscow",
+    });
+    const subtitle = event.place ? `${dateStr} · ${event.place}` : dateStr;
+    const linkUrl = `/${event.city.slug}/${event.category.slug}/${event.slug}`;
+
+    const agg = await prisma.banner.aggregate({ _max: { sortOrder: true } });
+    const nextOrder = (agg._max.sortOrder ?? 0) + 10;
+
+    banner = await prisma.banner.create({
+      data: {
+        title: event.title,
+        subtitle,
+        imageUrl: event.imageUrl,
+        linkUrl,
+        cityId: event.cityId,
+        sortOrder: nextOrder,
+        isActive: true,
+      },
+    });
+  }
+
+  return NextResponse.json({ event, banner, ok: true });
 }

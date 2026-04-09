@@ -30,6 +30,7 @@ export function EventForm({ cities, categories }: EventFormProps) {
     isPremiere: false,
     cityId: cities[0]?.id || 0,
     categoryId: categories[0]?.id || 0,
+    createBanner: false,
   });
 
   function set(key: string, value: unknown) {
@@ -39,6 +40,10 @@ export function EventForm({ cities, categories }: EventFormProps) {
   async function save() {
     if (!form.title || !form.date) {
       setError("Название и дата обязательны");
+      return;
+    }
+    if (form.createBanner && !form.imageUrl) {
+      setError("Для размещения баннера нужна картинка мероприятия");
       return;
     }
 
@@ -192,6 +197,27 @@ export function EventForm({ cities, categories }: EventFormProps) {
               Премьера
             </label>
           </div>
+        </div>
+
+        <div className="rounded-lg border border-border bg-secondary/30 p-4">
+          <label className="flex items-start gap-3 text-sm">
+            <input
+              type="checkbox"
+              checked={form.createBanner}
+              onChange={(e) => set("createBanner", e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-border"
+              disabled={!form.imageUrl}
+            />
+            <div>
+              <div className="font-medium">Разместить баннер</div>
+              <div className="text-xs text-muted-foreground">
+                Автоматически создать активный баннер для этого города: картинка, название и ссылка мероприятия.
+                {!form.imageUrl && (
+                  <span className="mt-1 block text-amber-600">Требуется URL изображения мероприятия.</span>
+                )}
+              </div>
+            </div>
+          </label>
         </div>
 
         <div className="flex gap-3 border-t border-border pt-4">
