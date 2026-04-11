@@ -2,11 +2,16 @@ import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { GlobalTemplateEditor } from "@/components/admin/GlobalTemplateEditor";
+import { AutopostControls } from "@/components/admin/AutopostControls";
 
 export default async function AdminTelegramPage() {
   await requireAdmin();
 
-  const globalTemplate = await prisma.setting.findUnique({ where: { key: "post_template" } });
+  const [globalTemplate, proxySetting, autopostSetting] = await Promise.all([
+    prisma.setting.findUnique({ where: { key: "post_template" } }),
+    prisma.setting.findUnique({ where: { key: "telegram_proxy" } }),
+    prisma.setting.findUnique({ where: { key: "autopost_enabled" } }),
+  ]);
 
   const channels = await prisma.channel.findMany({
     where: { platform: "TELEGRAM" },
@@ -44,6 +49,12 @@ export default async function AdminTelegramPage() {
   return (
     <AdminShell>
       <h1 className="mb-6 text-2xl font-bold">Telegram</h1>
+
+      {/* Autopost controls + proxy */}
+      <AutopostControls
+        initialProxy={proxySetting?.value ?? "95.81.97.97:1081:lse:181125nov"}
+        initialAutopostEnabled={autopostSetting?.value !== "false"}
+      />
 
       {/* Stats */}
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">

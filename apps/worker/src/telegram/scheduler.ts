@@ -1,4 +1,5 @@
 import { logger } from "../shared/logger.js";
+import { prisma } from "../shared/db.js";
 import { postNewEvents } from "./poster.js";
 import { postMaxEvents } from "./max-poster.js";
 import { notifyAdmin } from "./notify.js";
@@ -13,6 +14,12 @@ let lastReportTime = Date.now();
 const REPORT_INTERVAL_MS = 5 * 60 * 60 * 1000; // 5 hours
 
 export async function runTelegramPosting() {
+  // Check if autopost is enabled (Setting table)
+  const enabledSetting = await prisma.setting.findUnique({ where: { key: "autopost_enabled" } });
+  if (enabledSetting && enabledSetting.value === "false") {
+    return;
+  }
+
   logger.info("Starting posting run (Telegram + Max)...");
   statsRuns++;
 

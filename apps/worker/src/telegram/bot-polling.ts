@@ -2,6 +2,7 @@ import { Bot } from "grammy";
 import { config } from "../shared/config.js";
 import { logger } from "../shared/logger.js";
 import { setupAutoChannel } from "./auto-channel.js";
+import { ensureTelegramProxy } from "../shared/tg-proxy.js";
 
 let pollingBot: Bot | null = null;
 
@@ -11,7 +12,8 @@ export async function startBotPolling() {
     return;
   }
 
-  pollingBot = new Bot(config.telegram.botToken);
+  const apiRoot = await ensureTelegramProxy();
+  pollingBot = new Bot(config.telegram.botToken, apiRoot ? { client: { apiRoot } } : undefined);
 
   // Setup auto-channel detection
   setupAutoChannel(pollingBot);

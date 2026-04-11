@@ -3,12 +3,22 @@ import { prisma } from "../shared/db.js";
 import { logger } from "../shared/logger.js";
 import { config } from "../shared/config.js";
 import { formatTelegramPost } from "./formatter.js";
+import { ensureTelegramProxy } from "../shared/tg-proxy.js";
 
 let bot: Bot | null = null;
+let botApiRoot: string | null | undefined = undefined; // undefined = not initialized
 
-function getBot(): Bot {
+async function getBot(): Promise<Bot> {
+  const apiRoot = await ensureTelegramProxy();
+
+  // Recreate bot if apiRoot changed
+  if (bot && apiRoot !== botApiRoot) {
+    bot = null;
+  }
+
   if (!bot) {
-    bot = new Bot(config.telegram.botToken);
+    bot = new Bot(config.telegram.botToken, apiRoot ? { client: { apiRoot } } : undefined);
+    botApiRoot = apiRoot;
   }
   return bot;
 }
@@ -34,7 +44,7 @@ export async function postNewEvents(): Promise<number> {
   }
 
   let totalPosted = 0;
-  const tgBot = getBot();
+  const tgBot = await getBot();
   const now = new Date();
   const currentHour = now.getHours();
   const futureLimit = new Date(
