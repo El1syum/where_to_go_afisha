@@ -5,15 +5,17 @@ import { prisma } from "@/lib/db";
 const SETTING_KEY = "telegram_proxy";
 
 /**
- * Parse "host:port:user:password" → socks5://user:password@host:port
+ * Parse "host:port:user:password" → socks5h://user:password@host:port
+ * socks5h forces remote DNS resolution (critical when local DNS returns
+ * a blocked IP, as with api.telegram.org in some RU datacenters).
  */
 function toSocksUrl(value: string): string | null {
   const parts = value.trim().split(":");
   if (parts.length < 2) return null;
   const [host, port, user, pass] = parts;
   if (!host || !port) return null;
-  if (user && pass) return `socks5://${user}:${pass}@${host}:${port}`;
-  return `socks5://${host}:${port}`;
+  if (user && pass) return `socks5h://${user}:${pass}@${host}:${port}`;
+  return `socks5h://${host}:${port}`;
 }
 
 /**

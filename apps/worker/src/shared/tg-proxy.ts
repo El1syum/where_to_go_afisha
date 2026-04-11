@@ -12,15 +12,18 @@ const SETTING_KEY = "telegram_proxy";
 const DEFAULT_PROXY = "95.81.97.97:1081:lse:181125nov";
 
 /**
- * Parse "host:port:user:password" → socks5://user:password@host:port
+ * Parse "host:port:user:password" → socks5h://user:password@host:port
+ * Note: socks5h (not socks5) forces remote DNS resolution on the proxy side.
+ * This is critical when the client's DNS resolves to a blocked IP (as with
+ * api.telegram.org in some RU datacenters).
  */
 function toSocksUrl(value: string): string | null {
   const parts = value.trim().split(":");
   if (parts.length < 2) return null;
   const [host, port, user, pass] = parts;
   if (!host || !port) return null;
-  if (user && pass) return `socks5://${user}:${pass}@${host}:${port}`;
-  return `socks5://${host}:${port}`;
+  if (user && pass) return `socks5h://${user}:${pass}@${host}:${port}`;
+  return `socks5h://${host}:${port}`;
 }
 
 /**
@@ -72,11 +75,13 @@ export async function ensureTelegramProxy(): Promise<string | null> {
     await testSocksConnection(agent);
 
     const server = http.createServer((req, res) => {
-      const url = `https://api.telegram.org${req.url}`;
-
+      // Pass hostname explicitly (no IP lookup in Node) so socks5h can
+      // resolve it on the proxy side.
       const proxyReq = https.request(
-        url,
         {
+          hostname: "api.telegram.org",
+          port: 443,
+          path: req.url,
           method: req.method,
           headers: { ...req.headers, host: "api.telegram.org" },
           agent,
@@ -121,8 +126,14 @@ export async function ensureTelegramProxy(): Promise<string | null> {
 function testSocksConnection(agent: SocksProxyAgent): Promise<void> {
   return new Promise((resolve, reject) => {
     const req = https.request(
-      "https://api.telegram.org/",
-      { agent, timeout: 10000 },
+      {
+        hostname: "api.telegram.org",
+        port: 443,
+        path: "/",
+        method: "GET",
+        agent,
+        timeout: 10000,
+      },
       (res) => {
         res.resume();
         resolve();
