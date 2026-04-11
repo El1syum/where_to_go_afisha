@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getAdmin } from "@/lib/auth";
 import { renderPostFromTemplate } from "@/lib/post-template";
+import { telegramFetch } from "@/lib/telegram-fetch";
 
 async function sendTelegram(channel: { channelId: string }, text: string, imageUrl: string | null): Promise<number> {
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
@@ -23,14 +24,14 @@ async function sendTelegram(channel: { channelId: string }, text: string, imageU
         formData.append("photo", new Blob([fileData], { type: "image/jpeg" }), filename);
         formData.append("caption", text);
         formData.append("parse_mode", "HTML");
-        const r = await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, { method: "POST", body: formData });
+        const r = await telegramFetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, { method: "POST", body: formData });
         const d = await r.json();
         if (d.ok) { messageId = d.result.message_id; sent = true; }
       } catch {}
     }
     // Try remote URL
     if (!sent) {
-      const r = await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
+      const r = await telegramFetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ chat_id: channel.channelId, photo: imageUrl, caption: text, parse_mode: "HTML" }),
       });
@@ -40,7 +41,7 @@ async function sendTelegram(channel: { channelId: string }, text: string, imageU
   }
 
   if (!sent) {
-    const r = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+    const r = await telegramFetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ chat_id: channel.channelId, text, parse_mode: "HTML" }),
     });
