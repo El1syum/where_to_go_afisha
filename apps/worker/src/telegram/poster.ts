@@ -1,4 +1,4 @@
-import { Bot } from "grammy";
+import { Bot, InputFile } from "grammy";
 import { prisma } from "../shared/db.js";
 import { logger } from "../shared/logger.js";
 import { config } from "../shared/config.js";
@@ -177,16 +177,36 @@ export async function postNewEvents(): Promise<number> {
         if (imageUrl) {
           // Send photo with caption, fallback to text if photo fails
           try {
+            let photoInput: string | InputFile = imageUrl;
+
+            // For local images, send the file directly (more reliable than URL)
+            if (imageUrl.includes("/api/images/")) {
+              const { readFile } = await import("fs/promises");
+              const { join } = await import("path");
+              const filename = imageUrl.split("/api/images/")[1];
+              const filePath = join(process.env.IMAGES_DIR || "/opt/afisha/images", filename);
+              try {
+                const fileData = await readFile(filePath);
+                photoInput = new InputFile(fileData, filename);
+              } catch {
+                // File not on disk, fall through with URL
+              }
+            }
+
             const sent = await tgBot.api.sendPhoto(
               channel.channelId,
-              imageUrl,
+              photoInput,
               {
                 caption: text,
                 parse_mode: "HTML",
               }
             );
             messageId = sent.message_id;
-          } catch {
+          } catch (photoErr) {
+            logger.warn(
+              { eventId: event.id, channel: channel.channelId, err: photoErr instanceof Error ? photoErr.message : String(photoErr) },
+              "sendPhoto failed, falling back to text"
+            );
             const sent = await tgBot.api.sendMessage(
               channel.channelId,
               text,
