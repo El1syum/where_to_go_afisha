@@ -67,6 +67,9 @@ services:
       MAX_BOT_TOKEN: ${MAX_BOT_TOKEN:-}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       ADMIN_TELEGRAM_ID: ${ADMIN_TELEGRAM_ID:--1003211104896}
+      IMAGES_DIR: /app/images
+    volumes:
+      - /opt/afisha/images:/app/images
     depends_on:
       postgres:
         condition: service_healthy
