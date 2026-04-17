@@ -191,6 +191,28 @@ export async function postNewEvents(): Promise<number> {
               } catch {
                 // File not on disk, fall through with URL
               }
+            } else if (/^https?:\/\//i.test(imageUrl)) {
+              // External URL — download ourselves so Telegram doesn't need to
+              // reach the source (many CDNs block Telegram or hotlinks).
+              try {
+                const res = await fetch(imageUrl, {
+                  headers: { "User-Agent": "Mozilla/5.0" },
+                  signal: AbortSignal.timeout(15000),
+                });
+                if (res.ok) {
+                  const buf = Buffer.from(await res.arrayBuffer());
+                  if (buf.byteLength > 1024) {
+                    const ext = imageUrl.split(".").pop()?.toLowerCase().split(/[?#]/)[0] || "jpg";
+                    const name = `${event.id}.${["jpg", "jpeg", "png", "webp", "gif"].includes(ext) ? ext : "jpg"}`;
+                    photoInput = new InputFile(buf, name);
+                  }
+                }
+              } catch (dlErr) {
+                logger.warn(
+                  { eventId: event.id, url: imageUrl.substring(0, 100), err: dlErr instanceof Error ? dlErr.message : String(dlErr) },
+                  "Failed to download external image, will try URL",
+                );
+              }
             }
 
             const sent = await tgBot.api.sendPhoto(
