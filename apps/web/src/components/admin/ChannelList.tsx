@@ -49,9 +49,10 @@ interface ChannelListProps {
   channels: Channel[];
   cities: City[];
   categories: Category[];
+  globalTemplate?: string | null;
 }
 
-export function ChannelList({ channels, cities, categories }: ChannelListProps) {
+export function ChannelList({ channels, cities, categories, globalTemplate }: ChannelListProps) {
   const [platformFilter, setPlatformFilter] = useState<string>("all");
   const [cityFilter, setCityFilter] = useState<string>("all");
 
@@ -164,7 +165,7 @@ export function ChannelList({ channels, cities, categories }: ChannelListProps) 
               </div>
 
               <div className="mt-3">
-                <ChannelForm cities={cities} categories={categories} editChannel={ch} />
+                <ChannelForm cities={cities} categories={categories} editChannel={ch} globalTemplate={globalTemplate} />
               </div>
             </div>
           ))}

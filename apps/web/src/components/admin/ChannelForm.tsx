@@ -9,6 +9,7 @@ interface Category { slug: string; name: string }
 interface ChannelFormProps {
   cities: City[];
   categories: Category[];
+  globalTemplate?: string | null;
   editChannel?: {
     id: number;
     cityId: number;
@@ -31,7 +32,7 @@ interface ChannelFormProps {
   };
 }
 
-export function ChannelForm({ cities, categories, editChannel }: ChannelFormProps) {
+export function ChannelForm({ cities, categories, globalTemplate, editChannel }: ChannelFormProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const isEdit = !!editChannel;
@@ -50,7 +51,9 @@ export function ChannelForm({ cities, categories, editChannel }: ChannelFormProp
     publishHourTo: editChannel?.publishHourTo ?? 22,
     maxPostsPerDay: editChannel?.maxPostsPerDay ?? 10,
     postIntervalMinutes: editChannel?.postIntervalMinutes ?? 240,
-    postTemplate: editChannel?.postTemplate || `<TYPE_EMOJI> <b><TYPE></b>\n━━━━━━━━━━━━━━━\n<b><NAME></b>\n\n<<DESCRIPTION>>\n\n📅 <DATE>\n📍 <PLACE>\n💰 <PRICE>\n\n🎟 <a href="<URL>"><BUTTON></a>\n\n<TAGS>`,
+    // Leave empty for new channels so the global template is used;
+    // only prefill when editing an existing channel with a custom template.
+    postTemplate: editChannel?.postTemplate ?? "",
     aiRephrase: editChannel?.aiRephrase || false,
     aiModel: editChannel?.aiModel || "",
     aiPrompt: editChannel?.aiPrompt || "",
@@ -213,11 +216,32 @@ export function ChannelForm({ cities, categories, editChannel }: ChannelFormProp
           </div>
 
           <div className="border-t border-border pt-3">
-            <label className="mb-1 block text-xs font-semibold text-muted-foreground">Шаблон поста (пусто = глобальный)</label>
+            <div className="mb-1 flex items-center justify-between">
+              <label className="block text-xs font-semibold text-muted-foreground">Шаблон поста (пусто = глобальный)</label>
+              {globalTemplate && !form.postTemplate && (
+                <button
+                  type="button"
+                  onClick={() => set("postTemplate", globalTemplate)}
+                  className="text-xs text-primary hover:underline"
+                >
+                  Использовать глобальный
+                </button>
+              )}
+              {form.postTemplate && (
+                <button
+                  type="button"
+                  onClick={() => set("postTemplate", "")}
+                  className="text-xs text-muted-foreground hover:text-foreground"
+                >
+                  Очистить (использовать глобальный)
+                </button>
+              )}
+            </div>
             <textarea
               value={form.postTemplate}
               onChange={(e) => set("postTemplate", e.target.value)}
               rows={10}
+              placeholder={globalTemplate ? `Пусто — будет использован глобальный шаблон:\n\n${globalTemplate}` : "Пусто — будет использован глобальный шаблон"}
               className={inputCls + " font-mono text-xs"}
             />
             <p className="mt-1 text-xs text-muted-foreground">

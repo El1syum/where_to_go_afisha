@@ -30,6 +30,9 @@ function slugify(str: string, externalId: string): string {
 
 /**
  * Admitad date format: "DD.MM.YYYY" or "DD.MM.YYYY HH:MM"
+ * Empirically Admitad's feed dates are consistently 1 day earlier than
+ * the real event date reported by Yandex Afisha (e.g. Klava Koka
+ * Admitad 23.04 vs Yandex 24.04, same 21:00 MSK). Compensate by +1 day.
  */
 function parseAdmitadDate(dateStr: string): Date | null {
   if (!dateStr) return null;
@@ -40,7 +43,10 @@ function parseAdmitadDate(dateStr: string): Date | null {
     const [, day, month, year, hour, minute] = match;
     const iso = `${year}-${month}-${day}T${hour || "00"}:${minute || "00"}:00+03:00`;
     const d = new Date(iso);
-    return isNaN(d.getTime()) ? null : d;
+    if (isNaN(d.getTime())) return null;
+    // Shift +1 day to align with the real event date
+    d.setUTCDate(d.getUTCDate() + 1);
+    return d;
   }
 
   // Fallback: try ISO
