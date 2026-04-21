@@ -103,6 +103,16 @@ export function GlobalTemplateEditor({ initialTemplate }: Props) {
             </button>
           ))}
         </div>
+        <p className="mt-3 text-xs text-muted-foreground">
+          <strong>Форматирование:</strong>{" "}
+          <code className="rounded bg-secondary px-1">&lt;b&gt;жирный&lt;/b&gt;</code>,{" "}
+          <code className="rounded bg-secondary px-1">&lt;i&gt;курсив&lt;/i&gt;</code>,{" "}
+          <code className="rounded bg-secondary px-1">&lt;s&gt;зачёркнутый&lt;/s&gt;</code>,{" "}
+          <code className="rounded bg-secondary px-1">&lt;u&gt;подчёркнутый&lt;/u&gt;</code>,{" "}
+          <code className="rounded bg-secondary px-1">&lt;code&gt;моноширинный&lt;/code&gt;</code>,{" "}
+          <code className="rounded bg-secondary px-1">||спойлер||</code> (скрытый текст для промокодов),{" "}
+          <code className="rounded bg-secondary px-1">&lt;a href=&quot;…&quot;&gt;ссылка&lt;/a&gt;</code>
+        </p>
       </div>
 
       {error && <p className="mb-3 text-sm text-red-500">{error}</p>}
