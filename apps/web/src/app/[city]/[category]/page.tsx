@@ -16,15 +16,19 @@ interface CategoryPageProps {
 export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
   const { city: citySlug, category: categorySlug } = await params;
 
+  const isKidsView = categorySlug === "kids";
+
   const [city, category] = await Promise.all([
     prisma.city.findUnique({
       where: { slug: citySlug },
       select: { id: true, name: true, namePrepositional: true },
     }),
-    prisma.category.findUnique({
-      where: { slug: categorySlug },
-      select: { id: true, name: true },
-    }),
+    isKidsView
+      ? Promise.resolve({ id: 0, name: "Детям" })
+      : prisma.category.findUnique({
+          where: { slug: categorySlug },
+          select: { id: true, name: true },
+        }),
   ]);
 
   if (!city || !category) return {};
@@ -33,8 +37,18 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
   const title = `${category.name} в ${cityIn} — расписание, билеты`;
   const description = `${category.name} в ${cityIn}. Расписание, билеты онлайн. Все мероприятия на одном сайте.`;
 
+  const ogWhere: Record<string, unknown> = {
+    cityId: city.id,
+    isActive: true,
+    isApproved: true,
+    date: { gte: new Date() },
+    imageUrl: { not: null },
+  };
+  if (isKidsView) ogWhere.isKids = true;
+  else ogWhere.categoryId = category.id;
+
   const ogEvent = await prisma.event.findFirst({
-    where: { cityId: city.id, categoryId: category.id, isActive: true, isApproved: true, date: { gte: new Date() }, imageUrl: { not: null } },
+    where: ogWhere,
     orderBy: { price: "desc" },
     select: { imageUrl: true },
   });
@@ -51,15 +65,20 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
   const { city: citySlug, category: categorySlug } = await params;
   const { date: dateFilter, exact: exactDate, free, kids, age, price } = await searchParams;
 
+  // "kids" is a virtual category: shows all isKids=true events regardless of categoryId
+  const isKidsView = categorySlug === "kids";
+
   const [city, category] = await Promise.all([
     prisma.city.findUnique({
       where: { slug: citySlug },
       select: { id: true, name: true, namePrepositional: true },
     }),
-    prisma.category.findUnique({
-      where: { slug: categorySlug },
-      select: { id: true, name: true, slug: true, icon: true },
-    }),
+    isKidsView
+      ? Promise.resolve({ id: 0, name: "Детям", slug: "kids", icon: "🧸" })
+      : prisma.category.findUnique({
+          where: { slug: categorySlug },
+          select: { id: true, name: true, slug: true, icon: true },
+        }),
   ]);
 
   if (!city || !category) notFound();
@@ -68,11 +87,15 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
 
   const where: Record<string, unknown> = {
     cityId: city.id,
-    categoryId: category.id,
     isActive: true,
     isApproved: true,
     date: dateRange || { gte: new Date() },
   };
+  if (isKidsView) {
+    where.isKids = true;
+  } else {
+    where.categoryId = category.id;
+  }
   const andConditions: unknown[] = [];
   if (free === "1") {
     where.isAvailable = true;

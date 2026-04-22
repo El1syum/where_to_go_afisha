@@ -201,11 +201,13 @@ export async function postNewEvents(): Promise<number> {
                 });
                 if (res.ok) {
                   const buf = Buffer.from(await res.arrayBuffer());
-                  if (buf.byteLength > 1024) {
+                  const PHOTO_MAX = 10 * 1024 * 1024; // Telegram sendPhoto limit
+                  if (buf.byteLength > 1024 && buf.byteLength <= PHOTO_MAX) {
                     const ext = imageUrl.split(".").pop()?.toLowerCase().split(/[?#]/)[0] || "jpg";
                     const name = `${event.id}.${["jpg", "jpeg", "png", "webp", "gif"].includes(ext) ? ext : "jpg"}`;
                     photoInput = new InputFile(buf, name);
                   }
+                  // If > 10MB, keep the URL fallback (don't overwrite photoInput)
                 }
               } catch (dlErr) {
                 logger.warn(
@@ -215,15 +217,45 @@ export async function postNewEvents(): Promise<number> {
               }
             }
 
-            const sent = await tgBot.api.sendPhoto(
-              channel.channelId,
-              photoInput,
-              {
-                caption: text,
-                parse_mode: "HTML",
+            try {
+              const sent = await tgBot.api.sendPhoto(
+                channel.channelId,
+                photoInput,
+                {
+                  caption: text,
+                  parse_mode: "HTML",
+                }
+              );
+              messageId = sent.message_id;
+            } catch (photoErr) {
+              const errMsg = photoErr instanceof Error ? photoErr.message : String(photoErr);
+              // PHOTO_INVALID_DIMENSIONS / file too big / wrong content —
+              // try sending as document (any file is accepted there)
+              const tryDoc = photoInput instanceof InputFile &&
+                /PHOTO_INVALID_DIMENSIONS|too big|wrong type|failed to get/i.test(errMsg);
+              if (tryDoc) {
+                try {
+                  const sent = await tgBot.api.sendDocument(
+                    channel.channelId,
+                    photoInput,
+                    {
+                      caption: text,
+                      parse_mode: "HTML",
+                    }
+                  );
+                  messageId = sent.message_id;
+                  logger.info({ eventId: event.id, channel: channel.channelId }, "sendPhoto failed, sent as document");
+                } catch (docErr) {
+                  logger.warn(
+                    { eventId: event.id, channel: channel.channelId, err: docErr instanceof Error ? docErr.message : String(docErr) },
+                    "sendDocument fallback also failed"
+                  );
+                  throw photoErr; // throw original error to hit outer catch
+                }
+              } else {
+                throw photoErr;
               }
-            );
-            messageId = sent.message_id;
+            }
           } catch (photoErr) {
             logger.warn(
               { eventId: event.id, channel: channel.channelId, err: photoErr instanceof Error ? photoErr.message : String(photoErr) },

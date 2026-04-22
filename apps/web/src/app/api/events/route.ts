@@ -25,7 +25,10 @@ export async function GET(request: NextRequest) {
     if (city) where.cityId = city.id;
   }
 
-  if (categorySlug) {
+  // "kids" is a virtual category — filter by isKids regardless of categoryId
+  if (categorySlug === "kids") {
+    where.isKids = true;
+  } else if (categorySlug) {
     const category = await prisma.category.findUnique({
       where: { slug: categorySlug },
       select: { id: true },
