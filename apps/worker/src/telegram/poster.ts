@@ -4,6 +4,7 @@ import { logger } from "../shared/logger.js";
 import { config } from "../shared/config.js";
 import { formatTelegramPost } from "./formatter.js";
 import { ensureTelegramProxy } from "../shared/tg-proxy.js";
+import { convertImageToWebp } from "../shared/image-convert.js";
 
 let bot: Bot | null = null;
 let botApiRoot: string | null | undefined = undefined; // undefined = not initialized
@@ -192,22 +193,30 @@ export async function postNewEvents(): Promise<number> {
                 // File not on disk, fall through with URL
               }
             } else if (/^https?:\/\//i.test(imageUrl)) {
-              // External URL — download ourselves so Telegram doesn't need to
-              // reach the source (many CDNs block Telegram or hotlinks).
+              // External URL — download ourselves, resize + webp-convert
+              // (same pipeline as sync-images.sh). Telegram gets a small,
+              // well-proportioned file that always passes photo validation.
               try {
                 const res = await fetch(imageUrl, {
                   headers: { "User-Agent": "Mozilla/5.0" },
                   signal: AbortSignal.timeout(15000),
                 });
                 if (res.ok) {
-                  const buf = Buffer.from(await res.arrayBuffer());
-                  const PHOTO_MAX = 10 * 1024 * 1024; // Telegram sendPhoto limit
-                  if (buf.byteLength > 1024 && buf.byteLength <= PHOTO_MAX) {
-                    const ext = imageUrl.split(".").pop()?.toLowerCase().split(/[?#]/)[0] || "jpg";
-                    const name = `${event.id}.${["jpg", "jpeg", "png", "webp", "gif"].includes(ext) ? ext : "jpg"}`;
-                    photoInput = new InputFile(buf, name);
+                  const raw = Buffer.from(await res.arrayBuffer());
+                  if (raw.byteLength > 1024) {
+                    // Try webp conversion first; fall back to raw buffer if it fails
+                    const webp = await convertImageToWebp(raw);
+                    const PHOTO_MAX = 10 * 1024 * 1024;
+                    if (webp && webp.byteLength <= PHOTO_MAX) {
+                      photoInput = new InputFile(webp, `${event.id}.webp`);
+                    } else if (raw.byteLength <= PHOTO_MAX) {
+                      // No webp (convert failed) but raw fits — use it as-is
+                      const ext = imageUrl.split(".").pop()?.toLowerCase().split(/[?#]/)[0] || "jpg";
+                      const name = `${event.id}.${["jpg", "jpeg", "png", "webp", "gif"].includes(ext) ? ext : "jpg"}`;
+                      photoInput = new InputFile(raw, name);
+                    }
+                    // If raw > 10MB and webp conversion failed → keep URL fallback
                   }
-                  // If > 10MB, keep the URL fallback (don't overwrite photoInput)
                 }
               } catch (dlErr) {
                 logger.warn(
