@@ -36,7 +36,7 @@ function formatDate(date: Date, source?: string | null): string {
   // Yandex Afisha ships unreliable day-of-month — show the month only
   // and let the caller append a "exact date on purchase" note.
   if (source === "YANDEX_XML") {
-    return `в ${MONTHS_PREPOSITIONAL[date.getMonth()]} (точную дату уточняйте при покупке)`;
+    return `В ${MONTHS_PREPOSITIONAL[date.getMonth()]} (точную дату уточняйте при покупке)`;
   }
   return `${date.getDate()} ${MONTHS[date.getMonth()]}`;
 }

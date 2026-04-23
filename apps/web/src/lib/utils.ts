@@ -51,7 +51,7 @@ export function formatEventDate(date: Date | string, source?: string | null): st
   const d = typeof date === "string" ? new Date(date) : date;
   if (source === "YANDEX_XML") {
     const month = MONTHS_PREPOSITIONAL[d.getUTCMonth()];
-    return `в ${month}`;
+    return `В ${month}`;
   }
   return formatDate(d);
 }

@@ -33,7 +33,7 @@ const DEFAULT_TEMPLATE = `<TYPE_EMOJI> <b><TYPE></b>
 
 function formatDate(date: Date, source?: string | null): string {
   if (source === "YANDEX_XML") {
-    return `в ${MONTHS_PREPOSITIONAL[date.getMonth()]} (точную дату уточняйте при покупке)`;
+    return `В ${MONTHS_PREPOSITIONAL[date.getMonth()]} (точную дату уточняйте при покупке)`;
   }
   return `${date.getDate()} ${MONTHS[date.getMonth()]}`;
 }
