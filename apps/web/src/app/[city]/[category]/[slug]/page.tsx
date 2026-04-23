@@ -9,7 +9,6 @@ import { AdInContent } from "@/components/ads/AdInContent";
 import { ShareButtons } from "@/components/events/ShareButtons";
 import { EventCard } from "@/components/events/EventCard";
 import { EventChannels } from "@/components/events/EventChannels";
-import { Reviews } from "@/components/events/Reviews";
 import { YandexMusic } from "@/components/events/YandexMusic";
 export const revalidate = 3600;
 
@@ -185,9 +184,6 @@ export default async function EventPage({ params }: EventPageProps) {
           {/* Поделиться */}
           <ShareButtons title={event.title} url={eventUrl} />
 
-          {/* Отзывы */}
-          <Reviews eventId={event.id} />
-
           {/* Яндекс.Карта */}
           {event.place && (
             <div className="mt-8">
@@ -242,7 +238,12 @@ export default async function EventPage({ params }: EventPageProps) {
                   <span className="text-lg">📍</span>
                   <div>
                     <div className="text-sm text-muted-foreground">Место</div>
-                    <div className="font-medium">{event.place}</div>
+                    <Link
+                      href={`/${citySlug}/search?place=${encodeURIComponent(event.place)}`}
+                      className="font-medium text-gray-900 hover:text-indigo-600 hover:underline"
+                    >
+                      {event.place}
+                    </Link>
                   </div>
                 </div>
               )}
