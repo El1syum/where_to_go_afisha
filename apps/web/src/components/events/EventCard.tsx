@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { formatPrice, formatDate } from "@/lib/utils";
+import { formatPrice, formatEventDate } from "@/lib/utils";
 
 interface EventCardProps {
   event: {
@@ -14,6 +14,7 @@ interface EventCardProps {
     isPremiere: boolean;
     isAvailable: boolean;
     age: number | null;
+    source?: string | null;
     category: { slug: string; name: string; icon: string | null };
   };
   citySlug: string;
@@ -84,7 +85,7 @@ export function EventCard({ event, citySlug }: EventCardProps) {
 
         {/* Date */}
         <p className="text-sm text-gray-500">
-          {formatDate(event.date)}
+          {formatEventDate(event.date, event.source)}
         </p>
 
         {/* Venue */}

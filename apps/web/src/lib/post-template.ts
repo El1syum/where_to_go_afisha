@@ -12,6 +12,11 @@ const MONTHS = [
   "июля", "августа", "сентября", "октября", "ноября", "декабря",
 ];
 
+const MONTHS_PREPOSITIONAL = [
+  "январе", "феврале", "марте", "апреле", "мае", "июне",
+  "июле", "августе", "сентябре", "октябре", "ноябре", "декабре",
+];
+
 const DEFAULT_TEMPLATE = `<TYPE_EMOJI> <b><TYPE></b>
 ━━━━━━━━━━━━━━━
 <b><NAME></b>
@@ -26,7 +31,10 @@ const DEFAULT_TEMPLATE = `<TYPE_EMOJI> <b><TYPE></b>
 
 <TAGS>`;
 
-function formatDate(date: Date): string {
+function formatDate(date: Date, source?: string | null): string {
+  if (source === "YANDEX_XML") {
+    return `в ${MONTHS_PREPOSITIONAL[date.getMonth()]} (точную дату уточняйте при покупке)`;
+  }
   return `${date.getDate()} ${MONTHS[date.getMonth()]}`;
 }
 
@@ -57,6 +65,7 @@ interface EventData {
   isAvailable: boolean;
   age: number | null;
   slug: string;
+  source?: string | null;
   city: { slug: string; name: string };
   category: { slug: string; name: string };
 }
@@ -92,7 +101,7 @@ export async function renderPostFromTemplate(
     "<TYPE_EMOJI>": emoji,
     "<TYPE>": event.category.name,
     "<NAME>": event.title,
-    "<DATE>": formatDate(event.date),
+    "<DATE>": formatDate(event.date, event.source),
     "<PLACE>": placeLine,
     "<PRICE>": formatPrice(event.price != null ? Number(event.price) : null, event.isAvailable),
     "<URL>": eventPageUrl,

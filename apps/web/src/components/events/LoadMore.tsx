@@ -15,6 +15,7 @@ interface Event {
   isPremiere: boolean;
   isAvailable: boolean;
   age: number | null;
+  source?: string | null;
   category: { slug: string; name: string; icon: string | null };
 }
 

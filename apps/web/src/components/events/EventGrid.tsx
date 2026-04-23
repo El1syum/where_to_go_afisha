@@ -13,6 +13,7 @@ interface EventGridProps {
     isPremiere: boolean;
     isAvailable: boolean;
     age: number | null;
+    source?: string | null;
     category: { slug: string; name: string; icon: string | null };
   }>;
   citySlug: string;

@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { formatDateTime, formatDate, formatPrice } from "@/lib/utils";
+import { formatDateTime, formatDate, formatEventDate, formatPrice, YANDEX_DATE_NOTE } from "@/lib/utils";
 import { JsonLd, eventJsonLd, breadcrumbJsonLd } from "@/components/seo/JsonLd";
 import { AdInContent } from "@/components/ads/AdInContent";
 import { ShareButtons } from "@/components/events/ShareButtons";
@@ -224,7 +224,16 @@ export default async function EventPage({ params }: EventPageProps) {
                 <span className="text-lg">📅</span>
                 <div>
                   <div className="text-sm text-muted-foreground">Дата</div>
-                  <div className="font-medium">{formatDateTime(event.date)}</div>
+                  <div className="font-medium">
+                    {event.source === "YANDEX_XML"
+                      ? formatEventDate(event.date, event.source)
+                      : formatDateTime(event.date)}
+                  </div>
+                  {event.source === "YANDEX_XML" && (
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      {YANDEX_DATE_NOTE}
+                    </div>
+                  )}
                 </div>
               </div>
 

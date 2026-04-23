@@ -33,6 +33,34 @@ export function formatDateTime(date: Date | string): string {
   });
 }
 
+/**
+ * Russian month names in prepositional case ("в ноябре", "в апреле").
+ */
+const MONTHS_PREPOSITIONAL = [
+  "январе", "феврале", "марте", "апреле", "мае", "июне",
+  "июле", "августе", "сентябре", "октябре", "ноябре", "декабре",
+];
+
+/**
+ * Yandex Afisha feed ships approximate dates — the day is not reliable.
+ * For YANDEX_XML events we show only the month; everywhere else the
+ * regular day+month+year format is used. Filters (DateFilter, date
+ * ranges) keep working on the original `date` value in the DB.
+ */
+export function formatEventDate(date: Date | string, source?: string | null): string {
+  const d = typeof date === "string" ? new Date(date) : date;
+  if (source === "YANDEX_XML") {
+    const month = MONTHS_PREPOSITIONAL[d.getUTCMonth()];
+    return `в ${month}`;
+  }
+  return formatDate(d);
+}
+
+/**
+ * Disclaimer shown next to the date on Yandex Afisha events.
+ */
+export const YANDEX_DATE_NOTE = "Точную дату уточняйте при покупке билетов";
+
 export function transliterate(str: string): string {
   const map: Record<string, string> = {
     а: "a", б: "b", в: "v", г: "g", д: "d", е: "e", ё: "yo",

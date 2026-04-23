@@ -1,13 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
 import { prisma } from "@/lib/db";
-import { formatDate } from "@/lib/utils";
+import { formatEventDate } from "@/lib/utils";
 
 interface CollectionEvent {
   slug: string;
   title: string;
   date: Date;
   imageUrl: string | null;
+  source?: string | null;
   category: { slug: string; name: string; icon: string | null };
 }
 
@@ -42,7 +43,7 @@ function MiniCard({ event, citySlug }: { event: CollectionEvent; citySlug: strin
         <h3 className="mb-1 line-clamp-2 text-sm font-semibold leading-snug text-gray-900 group-hover:text-indigo-600">
           {event.title}
         </h3>
-        <p className="text-xs text-gray-500">{formatDate(event.date)}</p>
+        <p className="text-xs text-gray-500">{formatEventDate(event.date, event.source)}</p>
       </div>
     </Link>
   );

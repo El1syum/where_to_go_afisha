@@ -13,6 +13,11 @@ const MONTHS = [
   "июля", "августа", "сентября", "октября", "ноября", "декабря",
 ];
 
+const MONTHS_PREPOSITIONAL = [
+  "январе", "феврале", "марте", "апреле", "мае", "июне",
+  "июле", "августе", "сентябре", "октябре", "ноябре", "декабре",
+];
+
 const DEFAULT_TEMPLATE = `<TYPE_EMOJI> <b><TYPE></b>
 ━━━━━━━━━━━━━━━
 <b><NAME></b>
@@ -27,7 +32,12 @@ const DEFAULT_TEMPLATE = `<TYPE_EMOJI> <b><TYPE></b>
 
 <TAGS>`;
 
-function formatDate(date: Date): string {
+function formatDate(date: Date, source?: string | null): string {
+  // Yandex Afisha ships unreliable day-of-month — show the month only
+  // and let the caller append a "exact date on purchase" note.
+  if (source === "YANDEX_XML") {
+    return `в ${MONTHS_PREPOSITIONAL[date.getMonth()]} (точную дату уточняйте при покупке)`;
+  }
   return `${date.getDate()} ${MONTHS[date.getMonth()]}`;
 }
 
@@ -85,7 +95,7 @@ export async function formatTelegramPost(
     "<TYPE_EMOJI>": emoji,
     "<TYPE>": event.category.name,
     "<NAME>": event.title,
-    "<DATE>": formatDate(event.date),
+    "<DATE>": formatDate(event.date, event.source),
     "<PLACE>": placeLine,
     "<PRICE>": formatPrice(Number(event.price), event.isAvailable),
     "<URL>": eventPageUrl,
