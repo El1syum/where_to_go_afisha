@@ -240,7 +240,7 @@ export default async function EventPage({ params }: EventPageProps) {
                     <div className="text-sm text-muted-foreground">Место</div>
                     <Link
                       href={`/${citySlug}/search?place=${encodeURIComponent(event.place)}`}
-                      className="font-medium text-gray-900 hover:text-indigo-600 hover:underline"
+                      className="font-medium text-indigo-600 underline-offset-2 hover:text-indigo-700 hover:underline"
                     >
                       {event.place}
                     </Link>
