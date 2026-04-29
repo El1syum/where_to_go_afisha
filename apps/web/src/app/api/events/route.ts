@@ -53,6 +53,29 @@ export async function GET(request: NextRequest) {
   andConditions.push(...buildPriceFilter(price));
   if (andConditions.length > 0) where.AND = andConditions;
 
+  // When filtering by specific category, no need to interleave
+  if (categorySlug) {
+    const [events, total] = await Promise.all([
+      prisma.event.findMany({
+        where,
+        include: {
+          category: { select: { slug: true, name: true, icon: true } },
+          city: { select: { slug: true, name: true } },
+        },
+        orderBy: [{ price: "desc" }, { date: "asc" }],
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.event.count({ where }),
+    ]);
+
+    return NextResponse.json({
+      events: events.map(serialize),
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    });
+  }
+
+  // For all-categories view: fetch more, interleave, slice
   const [rawEvents, total] = await Promise.all([
     prisma.event.findMany({
       where,
@@ -62,28 +85,24 @@ export async function GET(request: NextRequest) {
       },
       orderBy: [{ price: "desc" }, { date: "asc" }],
       skip: (page - 1) * limit,
-      take: limit * 2,
+      take: limit * 4,
     }),
     prisma.event.count({ where }),
   ]);
 
   const events = interleaveByCategory(rawEvents).slice(0, limit);
 
-  // Convert BigInt fields to string for JSON serialization
-  const safeEvents = events.map((e) => ({
+  return NextResponse.json({
+    events: events.map(serialize),
+    pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+  });
+}
+
+function serialize(e: Record<string, unknown> & { modifiedTime?: bigint | null; price?: unknown; priceMax?: unknown }) {
+  return {
     ...e,
     modifiedTime: e.modifiedTime?.toString() ?? null,
     price: e.price ? Number(e.price) : null,
     priceMax: e.priceMax ? Number(e.priceMax) : null,
-  }));
-
-  return NextResponse.json({
-    events: safeEvents,
-    pagination: {
-      page,
-      limit,
-      total,
-      totalPages: Math.ceil(total / limit),
-    },
-  });
+  };
 }
