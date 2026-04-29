@@ -7,23 +7,23 @@ export const config = {
   },
   xmlFeed: {
     url: process.env.XML_FEED_URL || "",
-    cronSchedule: process.env.XML_CRON || "0 8 * * *", // daily at 08:00
-    batchSize: 500,
+    cronSchedule: process.env.XML_CRON || "0 3 * * *", // daily at 03:00
+    batchSize: 1000,
   },
   advcakeFeed: {
     url: process.env.ADVCAKE_FEED_URL || "",
-    cronSchedule: process.env.ADVCAKE_CRON || "0 9 * * *", // daily at 09:00
-    batchSize: 500,
+    cronSchedule: process.env.ADVCAKE_CRON || "0 5 * * *", // daily at 05:00
+    batchSize: 1000,
   },
   admitadFeed: {
     url: process.env.ADMITAD_FEED_URL || "",
-    cronSchedule: process.env.ADMITAD_CRON || "0 10 * * *", // daily at 10:00
-    batchSize: 500,
+    cronSchedule: process.env.ADMITAD_CRON || "0 7 * * *", // daily at 07:00
+    batchSize: 1000,
   },
   kassirFeed: {
     url: process.env.KASSIR_FEED_URL || "",
-    cronSchedule: process.env.KASSIR_CRON || "0 11 * * *", // daily at 11:00
-    batchSize: 500,
+    cronSchedule: process.env.KASSIR_CRON || "30 4 * * *", // daily at 04:30
+    batchSize: 1000,
   },
   telegram: {
     botToken: process.env.TELEGRAM_BOT_TOKEN || "",
@@ -36,6 +36,6 @@ export const config = {
     botToken: process.env.MAX_BOT_TOKEN || "",
   },
   cleanup: {
-    cronSchedule: "0 3 * * *", // daily at 3:00 AM
+    cronSchedule: "0 2 * * *", // daily at 2:00 AM
   },
 };
