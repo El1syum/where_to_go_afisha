@@ -19,24 +19,31 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
   const [city, category] = await Promise.all([
     prisma.city.findUnique({
       where: { slug: citySlug },
-      select: { name: true, namePrepositional: true },
+      select: { id: true, name: true, namePrepositional: true },
     }),
     prisma.category.findUnique({
       where: { slug: categorySlug },
-      select: { name: true },
+      select: { id: true, name: true },
     }),
   ]);
 
   if (!city || !category) return {};
 
   const cityIn = city.namePrepositional || city.name;
+  const title = `${category.name} в ${cityIn} — расписание, билеты`;
+  const description = `${category.name} в ${cityIn}. Расписание, билеты онлайн. Все мероприятия на одном сайте.`;
+
+  const ogEvent = await prisma.event.findFirst({
+    where: { cityId: city.id, categoryId: category.id, isActive: true, isApproved: true, date: { gte: new Date() }, imageUrl: { not: null } },
+    orderBy: { price: "desc" },
+    select: { imageUrl: true },
+  });
 
   return {
-    title: `${category.name} в ${cityIn} — расписание, билеты`,
-    description: `${category.name} в ${cityIn}. Расписание, билеты онлайн. Все мероприятия на одном сайте.`,
-    alternates: {
-      canonical: `/${citySlug}/${categorySlug}`,
-    },
+    title,
+    description,
+    alternates: { canonical: `/${citySlug}/${categorySlug}` },
+    openGraph: { title, description, images: ogEvent?.imageUrl ? [ogEvent.imageUrl] : undefined },
   };
 }
 

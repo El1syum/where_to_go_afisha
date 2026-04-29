@@ -20,6 +20,7 @@ model City {
   sortOrder             Int       @default(0)
   metaTitle             String?
   metaDescription       String?
+  seoText               String?   @db.Text
   telegramChannelId     String?
   telegramChannelUsername String?
   createdAt             DateTime  @default(now())

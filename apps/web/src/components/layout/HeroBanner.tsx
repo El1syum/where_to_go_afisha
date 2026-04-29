@@ -63,7 +63,7 @@ export function HeroBanner({ citySlug }: HeroBannerProps) {
 
   return (
     <div className="relative mb-8 overflow-hidden rounded-2xl" style={{ minHeight: 320 }}>
-      {/* Previous image (fading out) */}
+      {/* Current + previous image only (not all 5) */}
       {prev !== null && (
         <Image
           key={`prev-${prev}`}
@@ -75,24 +75,16 @@ export function HeroBanner({ citySlug }: HeroBannerProps) {
           sizes="(max-width: 1280px) 100vw, 1200px"
         />
       )}
-
-      {/* All images stacked, only current visible */}
-      {SLIDES.map((slide, i) => (
-        <Image
-          key={slide.image}
-          src={slide.image}
-          alt={slide.title}
-          fill
-          className="object-cover transition-all duration-700 ease-in-out"
-          style={{
-            opacity: i === current ? 1 : 0,
-            transform: i === current ? "scale(1)" : "scale(1.05)",
-            zIndex: i === current ? 2 : 0,
-          }}
-          sizes="(max-width: 1280px) 100vw, 1200px"
-          priority={i === 0}
-        />
-      ))}
+      <Image
+        key={`cur-${current}`}
+        src={SLIDES[current].image}
+        alt={SLIDES[current].title}
+        fill
+        className="object-cover transition-all duration-700 ease-in-out"
+        style={{ opacity: 1, transform: "scale(1)", zIndex: 2 }}
+        sizes="(max-width: 1280px) 100vw, 1200px"
+        priority={current === 0}
+      />
 
       {/* Dark gradient overlay */}
       <div className="absolute inset-0 z-[3] bg-gradient-to-t from-black/80 via-black/40 to-black/20" />

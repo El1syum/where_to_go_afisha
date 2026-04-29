@@ -1,6 +1,14 @@
 import Link from "next/link";
+import { prisma } from "@/lib/db";
 
-export function Footer() {
+export async function Footer() {
+  const cities = await prisma.city.findMany({
+    where: { isActive: true },
+    orderBy: { sortOrder: "asc" },
+    select: { slug: true, name: true },
+    take: 20,
+  });
+
   return (
     <footer className="mt-auto bg-[#1e1b3a]">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
@@ -11,12 +19,22 @@ export function Footer() {
               Афиша мероприятий по городам России
             </p>
           </div>
-          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-gray-400">
-            <Link href="/moscow" className="transition-colors hover:text-white">Москва</Link>
-            <Link href="/saint-petersburg" className="transition-colors hover:text-white">Петербург</Link>
-            <Link href="/kazan" className="transition-colors hover:text-white">Казань</Link>
-          </div>
         </div>
+
+        {/* Cities grid */}
+        {cities.length > 0 && (
+          <div className="mt-6 border-t border-white/10 pt-4">
+            <p className="mb-3 text-xs font-medium text-gray-500">Города</p>
+            <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-gray-400">
+              {cities.map((city) => (
+                <Link key={city.slug} href={`/${city.slug}`} className="transition-colors hover:text-white">
+                  {city.name}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="mt-6 flex flex-wrap justify-center gap-x-6 gap-y-2 border-t border-white/10 pt-4 text-xs text-gray-400">
           <Link href="/about" className="transition-colors hover:text-white">О проекте</Link>
           <Link href="/contacts" className="transition-colors hover:text-white">Контакты</Link>

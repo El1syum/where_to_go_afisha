@@ -20,20 +20,31 @@ export async function generateMetadata({ params }: CityPageProps): Promise<Metad
   const { city: citySlug } = await params;
   const city = await prisma.city.findUnique({
     where: { slug: citySlug },
-    select: { name: true, metaTitle: true, metaDescription: true, namePrepositional: true },
+    select: { name: true, metaTitle: true, metaDescription: true, namePrepositional: true, id: true },
   });
 
   if (!city) return {};
 
   const cityIn = city.namePrepositional || city.name;
+  const title = city.metaTitle || `Куда сходить в ${cityIn}`;
+  const description = city.metaDescription ||
+    `Все мероприятия в ${cityIn}. Концерты, театр, выставки, экскурсии, спорт. Расписание и покупка билетов онлайн.`;
+
+  // OG image — first event with image
+  const ogEvent = await prisma.event.findFirst({
+    where: { cityId: city.id, isActive: true, isApproved: true, date: { gte: new Date() }, imageUrl: { not: null } },
+    orderBy: { price: "desc" },
+    select: { imageUrl: true },
+  });
 
   return {
-    title: city.metaTitle || `Куда сходить в ${cityIn}`,
-    description:
-      city.metaDescription ||
-      `Все мероприятия в ${cityIn}. Концерты, театр, выставки, экскурсии, спорт. Расписание и покупка билетов онлайн.`,
-    alternates: {
-      canonical: `/${citySlug}`,
+    title,
+    description,
+    alternates: { canonical: `/${citySlug}` },
+    openGraph: {
+      title,
+      description,
+      images: ogEvent?.imageUrl ? [ogEvent.imageUrl] : undefined,
     },
   };
 }
@@ -44,7 +55,7 @@ export default async function CityPage({ params, searchParams }: CityPageProps) 
 
   const city = await prisma.city.findUnique({
     where: { slug: citySlug },
-    select: { id: true, name: true, namePrepositional: true },
+    select: { id: true, name: true, namePrepositional: true, seoText: true },
   });
 
   if (!city) notFound();
@@ -163,7 +174,48 @@ export default async function CityPage({ params, searchParams }: CityPageProps) 
 
       <EventGrid events={events} citySlug={citySlug} total={total} />
 
+      {city.seoText && (
+        <div className="mt-8 rounded-2xl bg-white p-6 shadow-sm">
+          <h2 className="mb-3 text-lg font-semibold text-gray-900">Куда сходить в {cityIn}</h2>
+          <div className="prose prose-sm max-w-none text-gray-600">
+            {city.seoText.split("\n").map((p, i) => (
+              <p key={i}>{p}</p>
+            ))}
+          </div>
+        </div>
+      )}
+
       <CitySocials cityId={city.id} />
+
+      <OtherCities currentSlug={citySlug} />
     </>
+  );
+}
+
+async function OtherCities({ currentSlug }: { currentSlug: string }) {
+  const cities = await prisma.city.findMany({
+    where: { isActive: true, slug: { not: currentSlug } },
+    orderBy: { sortOrder: "asc" },
+    select: { slug: true, name: true },
+    take: 15,
+  });
+
+  if (cities.length === 0) return null;
+
+  return (
+    <div className="mt-8 rounded-2xl bg-white p-5 shadow-sm">
+      <h2 className="mb-3 text-lg font-semibold text-gray-900">Другие города</h2>
+      <div className="flex flex-wrap gap-2">
+        {cities.map((c) => (
+          <a
+            key={c.slug}
+            href={`/${c.slug}`}
+            className="rounded-full border border-gray-200 px-3 py-1.5 text-sm text-gray-600 transition-colors hover:border-indigo-300 hover:text-indigo-600"
+          >
+            {c.name}
+          </a>
+        ))}
+      </div>
+    </div>
   );
 }
