@@ -158,40 +158,31 @@ export function interleaveByCategory<T extends { category: { slug: string }; pri
     });
   }
 
-  // Round-robin pick from categories
+  // Pick most expensive from a different category each step
   const result: T[] = [];
-  const queues = [...groups.values()].sort((a, b) => b.length - a.length);
   let lastSlug = "";
 
   while (result.length < events.length) {
-    let picked = false;
+    let bestQueue: T[] | null = null;
+    let bestPrice = -1;
 
-    // Try to pick from a different category than last
-    for (const q of queues) {
+    for (const q of groups.values()) {
       if (q.length === 0) continue;
-      if (q[0].category.slug !== lastSlug) {
-        const item = q.shift()!;
-        result.push(item);
-        lastSlug = item.category.slug;
-        picked = true;
-        break;
+      if (q[0].category.slug === lastSlug) continue;
+      const p = Number(q[0].price) || 0;
+      if (p > bestPrice) { bestPrice = p; bestQueue = q; }
+    }
+
+    if (!bestQueue) {
+      for (const q of groups.values()) {
+        if (q.length > 0) { bestQueue = q; break; }
       }
     }
 
-    // Fallback: pick from any non-empty queue
-    if (!picked) {
-      for (const q of queues) {
-        if (q.length > 0) {
-          const item = q.shift()!;
-          result.push(item);
-          lastSlug = item.category.slug;
-          picked = true;
-          break;
-        }
-      }
-    }
-
-    if (!picked) break;
+    if (!bestQueue) break;
+    const item = bestQueue.shift()!;
+    result.push(item);
+    lastSlug = item.category.slug;
   }
 
   return result;

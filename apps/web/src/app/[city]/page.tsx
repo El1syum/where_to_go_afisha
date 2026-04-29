@@ -97,7 +97,7 @@ export default async function CityPage({ params, searchParams }: CityPageProps) 
 
   type EventWithCategory = (typeof rawEvents)[number];
 
-  // Interleave: round-robin by category, expensive first within each
+  // Interleave: on each step pick the most expensive event from a different category
   const groups = new Map<string, EventWithCategory[]>();
   for (const e of rawEvents) {
     const key = e.category.slug;
@@ -111,30 +111,28 @@ export default async function CityPage({ params, searchParams }: CityPageProps) 
       return pb !== pa ? pb - pa : new Date(a.date).getTime() - new Date(b.date).getTime();
     });
   }
-  const queues = [...groups.values()].sort((a, b) => b.length - a.length);
   const events: EventWithCategory[] = [];
   let lastSlug = "";
-  while (events.length < 24 && queues.some((q) => q.length > 0)) {
-    let picked = false;
-    for (const q of queues) {
-      if (q.length > 0 && q[0].category.slug !== lastSlug) {
-        const item = q.shift()!;
-        events.push(item);
-        lastSlug = item.category.slug;
-        picked = true;
-        break;
+  while (events.length < 24) {
+    // Find the most expensive head across all queues, excluding lastSlug
+    let bestQueue: EventWithCategory[] | null = null;
+    let bestPrice = -1;
+    for (const q of groups.values()) {
+      if (q.length === 0) continue;
+      if (q[0].category.slug === lastSlug) continue;
+      const p = Number(q[0].price) || 0;
+      if (p > bestPrice) { bestPrice = p; bestQueue = q; }
+    }
+    // Fallback: if all remaining are same category, pick anyway
+    if (!bestQueue) {
+      for (const q of groups.values()) {
+        if (q.length > 0) { bestQueue = q; break; }
       }
     }
-    if (!picked) {
-      for (const q of queues) {
-        if (q.length > 0) {
-          const item = q.shift()!;
-          events.push(item);
-          lastSlug = item.category.slug;
-          break;
-        }
-      }
-    }
+    if (!bestQueue) break;
+    const item = bestQueue.shift()!;
+    events.push(item);
+    lastSlug = item.category.slug;
   }
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
